@@ -6,8 +6,7 @@
 
 **🚀 Key Features:**
 
--   **Versatile Name Generation:** Effortlessly generate lists of random names with granular control over filtering by gender and other attributes (e.g., age, grade). 
-    -   [!TIP] Customize your selections to perfectly match your specific needs!
+-   **Versatile Name Generation:** Effortlessly generate lists of random names with granular control over filtering by gender and other attributes (e.g., age, grade). Customize your selections to perfectly match your specific needs!
 -   **Effortless Group Formation:** Create perfectly balanced groups based on your desired size or number, ensuring fair representation across all parameters. Never worry about uneven or biased groups again!
 -   **Representative Picking:** Pre-assign individuals to specific groups and let Name Roulette handle the rest, guaranteeing a harmonious blend of pre-determined and random selections.
 -   **Intuitive & Modern UI:** Enjoy a seamless and engaging experience with our polished and user-friendly interface, designed to make your selection process a breeze.
@@ -25,8 +24,8 @@ Existing solutions proved inadequate. Manual selection methods were cumbersome a
 
 **Name Roulette is more than just a random name picker – it's a solution born from a real-world challenge, designed to make a tangible difference in classrooms, workplaces, and beyond.**
 
-[!TIP]
-*"Solve **real-world problems** using **practical solutions**, delivering **tangible values**."*
+> [!TIP]
+> *"Solve **real-world problems** using **practical solutions**, delivering **tangible values**."*
 
 Name Roulette stands out from the crowd by offering a laser-focused, intuitive, and easy-to-use solution that directly tackles this common pain point.
 
