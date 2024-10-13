@@ -55,7 +55,7 @@ Embarking on this project provides a golden opportunity to cultivate and refine 
 
 ## 🤝 Contributing
 
-We warmly welcome contributions from the community! Please see our [Contribution Guidelines](link-to-guidelines) for detailed information on how to get involved.
+This project is currently restricted to only group 2 members of Basic programming for Data Science course.
 
 
 ## 📄 License
@@ -65,5 +65,5 @@ This project is licensed under the [MIT License](link-to-license).
 
 ## 📞 Contact
 
-[Your Contact Information]
+For now, you can open an issue, open a pull request, or DM the repo owner.
 

@@ -1,6 +1,20 @@
-## Name Roulette: Project Milestones (Mục tiêu và kế hoạch sơ bộ)
+## **Name Roulette: Project Milestones**
 
-### Preliminary Plan
+### **Group 2** - List of members:
+
+| **Index** | **Student ID** | **Full name** |
+|:---:|:---:|:---|
+| 0 | 11230522 | Thành Uyển Dung |
+| 1 | 11230512 | Nguyễn Thị Mai Anh |
+| 2 | 11230530 | Nguyễn Phương Đông |
+| 3 | 11230538 | Nguyễn Hoàng |
+| 4 | 11230553 | Hàn Chí Kiên |
+| 5 | 11230574 | Nguyễn Phú Nam |
+| 6 | 11230552 | Đỗ Hữu Kiên |
+
+
+
+### **Preliminary Plan**
 
 **A. Main Modules:**
 
@@ -95,15 +109,16 @@ name_roulette/
 ### **Python Libraries** *(options, not 100% required)*
 
 -   **Data Manipulation:**
-    -   Pandas: For efficient data loading, manipulation, and filtering.
-    -   Pickle/JSON: For saving and loading custom class lists.
+    -   **Pandas**: For efficient data loading, manipulation, and filtering.
+    -   **Pickle/JSON**: For saving and loading custom class lists.
 -   **UI Development:**
-    -   Tkinter: A standard Python UI framework (beginner-friendly).
-    -   PyQt: A more advanced and feature-rich UI framework.
+    -   **Tkinter**: A standard Python UI framework (beginner-friendly).
+    -   **PyQt**: A more advanced and feature-rich UI framework.
 -   **Randomization:**
-    -   random: Python's built-in module for random number generation.
+    -   `random`: Python's built-in module for random number generation.
+    -   If possible, we can opt for self-made randomization module instead of having to rely on external dependencies *(might not be as 'random' as mature solutions)*
 -   **Other Potential Libraries:**
-    -   NumPy: For numerical operations (if needed for attribute-based filtering).
+    -   **NumPy**: For numerical operations (if needed for attribute-based filtering).
 
 
 ## **B. Comprehensive Task List**
