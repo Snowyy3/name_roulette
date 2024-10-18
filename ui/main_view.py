@@ -17,7 +17,7 @@ class MainView(ft.UserControl):
             min_width=60,
             min_extended_width=200,
             leading=ft.IconButton(icon=ft.icons.MENU, on_click=self.toggle_sidebar),
-            group_alignment=-0.9,
+            group_alignment=-1,
             destinations=[
                 ft.NavigationRailDestination(
                     icon=ft.icons.SHUFFLE,
@@ -28,16 +28,6 @@ class MainView(ft.UserControl):
                     icon=ft.icons.GROUP,
                     selected_icon=ft.icons.GROUP,
                     label="Group Formation"
-                ),
-                ft.NavigationRailDestination(
-                    icon=ft.icons.SETTINGS,
-                    selected_icon=ft.icons.SETTINGS,
-                    label="Settings"
-                ),
-                ft.NavigationRailDestination(
-                    icon=ft.icons.ACCOUNT_CIRCLE,
-                    selected_icon=ft.icons.ACCOUNT_CIRCLE,
-                    label="User Account"
                 ),
             ],
             on_change=self.sidebar_change,
@@ -52,16 +42,17 @@ class MainView(ft.UserControl):
             content=self.sidebar,
             bgcolor=ft.colors.SURFACE_VARIANT,
             width=60,
-            height=self.page.height if self.page else None,  # Handle potential None value
+            height=self.page.window_height if self.page else None,
             animate=ft.animation.Animation(300, ft.AnimationCurve.EASE_OUT),
         )
 
-        main_stack = ft.Stack([
-            self.content_area,
-            self.sidebar_container
-        ], expand=True)  # Ensure the Stack expands to fill available space
+        main_row = ft.Row([
+            self.sidebar_container,
+            ft.VerticalDivider(width=1),
+            self.content_area
+        ], expand=True, spacing=0)
 
-        self.controls.append(main_stack)
+        self.controls.append(ft.Container(content=main_row, expand=True))
 
     def toggle_sidebar(self, e):
         self.is_expanded = not self.is_expanded
@@ -81,10 +72,4 @@ class MainView(ft.UserControl):
         elif selected_index == 1:
             # TODO: Implement Group Formation View
             self.content_area.content = ft.Text("Group Formation View (Coming Soon)")
-        elif selected_index == 2:
-            # TODO: Implement Settings View
-            self.content_area.content = ft.Text("Settings View (Coming Soon)")
-        elif selected_index == 3:
-            # TODO: Implement User Account View
-            self.content_area.content = ft.Text("User Account View (Coming Soon)")
         self.content_area.update()
