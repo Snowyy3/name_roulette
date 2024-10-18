@@ -19,6 +19,9 @@
 .stfolder/
 .stversions/
 
+# Just a file to myself to keep track of certain decisions and future improvements
+Coding_chronicles.ipynb
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
