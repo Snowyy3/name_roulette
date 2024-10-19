@@ -1,8 +1,8 @@
-import random
+import random as rd
+
 
 class NameGenerator:
-    def generate_random_names(self, names, gender_filter):
-        # For now, we'll ignore the gender filter and just shuffle the names
-        shuffled_names = names.copy()
-        random.shuffle(shuffled_names)
-        return shuffled_names
+    def get_random_names(self, names: list[str]) -> str | list[str]:
+        # No filtering for now
+        randomized_name = rd.choices(names, k=1)
+        return randomized_name
