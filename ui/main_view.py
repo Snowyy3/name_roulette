@@ -73,7 +73,9 @@ class MainView(UserControl):
                     Container(
                         content=self.left_sidebar,
                         expand=True,
-                        height=self.page.window.height - 100 if self.page else None,  # Subtract space for menu button # type: ignore
+                        height=self.page.window.height - 100
+                        if self.page
+                        else None,  # Subtract space for menu button # type: ignore
                     ),
                 ],
                 expand=True,

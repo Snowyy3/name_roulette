@@ -25,10 +25,22 @@ class NameGenerationView(UserControl):
             width=200,
             disabled=False,
         )
+        self.input_area = self._build_input_area()
+        self.output_area = self._build_output_area()
 
     def build(self) -> Row:
-        # Left column (input area)
-        self.input_area = Container(
+        return Row(
+            [
+                self.input_area,
+                self._build_divider(),
+                self._build_right_column(),
+            ],
+            spacing=0,
+            expand=True,
+        )
+
+    def _build_input_area(self) -> Container:
+        return Container(
             content=Column(
                 [
                     Text("Enter Names (one per line)"),
@@ -42,14 +54,27 @@ class NameGenerationView(UserControl):
                 ],
                 spacing=20,
                 expand=True,
-                alignment=ft.MainAxisAlignment.START,  # Align to top
+                alignment=ft.MainAxisAlignment.START,
             ),
             expand=1,
             padding=20,
         )
 
-        # Right column (filter and output area)
-        self.filter_area = Container(
+    def _build_divider(self) -> VerticalDivider:
+        return VerticalDivider(width=1, color=ft.colors.OUTLINE)
+
+    def _build_right_column(self) -> Column:
+        return Column(
+            [
+                self._build_filter_area(),
+                self.output_area,
+            ],
+            expand=1,
+            alignment=ft.MainAxisAlignment.START,
+        )
+
+    def _build_filter_area(self) -> Container:
+        return Container(
             content=Column(
                 [
                     Text("Number of names to pick:"),
@@ -70,12 +95,13 @@ class NameGenerationView(UserControl):
                     self.randomize_button,
                 ],
                 spacing=20,
-                alignment=ft.MainAxisAlignment.START,  # Align to top
+                alignment=ft.MainAxisAlignment.START,
             ),
             padding=20,
         )
 
-        self.output_area = Container(
+    def _build_output_area(self) -> Container:
+        return Container(
             content=Column(
                 [
                     Text("Generated Name(s):"),
@@ -87,26 +113,10 @@ class NameGenerationView(UserControl):
                 ],
                 spacing=20,
                 expand=True,
-                alignment=ft.MainAxisAlignment.START,  # Align to top
+                alignment=ft.MainAxisAlignment.START,
             ),
             expand=True,
             padding=20,
-        )
-
-        right_column = Column([self.filter_area, self.output_area], expand=1, alignment=ft.MainAxisAlignment.START)
-
-        # Vertical divider
-        self.divider = VerticalDivider(width=1, color=ft.colors.OUTLINE)
-
-        # Main layout
-        return Row(
-            [
-                self.input_area,
-                self.divider,
-                right_column,
-            ],
-            spacing=0,
-            expand=True,
         )
 
     def update_selected_num(self, e):
@@ -117,38 +127,35 @@ class NameGenerationView(UserControl):
         self.validate_input()
 
     def validate_input(self, e=None):
-        try:
-            num_names = int(self.num_names_input.value) if self.selected_num == "custom" else int(self.selected_num)
-        except ValueError:
-            num_names = 0
-        names = []
-        if self.input_area.content and self.input_area.content.controls:
-            input_text = self.input_area.content.controls[1].value
-            if input_text:
-                names = [name.strip() for name in input_text.splitlines() if name.strip()]
-
+        num_names = self._get_num_names()
+        names = self._get_cleaned_names()
         self.randomize_button.disabled = num_names > len(names)
         self.randomize_button.update()
 
     def generate_random_name(self, e):
-        # Get the number of names to generate
-        try:
-            num_names = int(self.num_names_input.value) if self.selected_num == "custom" else int(self.selected_num)
-        except ValueError:
-            num_names = 0
-        # Split names by new line and strip spaces
-        names = []
-        if self.input_area.content and self.input_area.content.controls:
-            input_text = self.input_area.content.controls[1].value
-            if input_text:
-                names = [name.strip() for name in input_text.splitlines() if name.strip()]
-
-        # Call the controller to generate names
+        num_names = self._get_num_names()
+        names = self._get_cleaned_names()
         generated_names = self.controller.generate_name(names, num_names)
+        self._update_output_area(generated_names)
 
-        # Update the output area
-        if self.output_area.content and self.output_area.content.controls:
+    def _get_num_names(self) -> int:
+        try:
+            return int(self.num_names_input.value) if self.selected_num == "custom" else int(self.selected_num)
+        except ValueError:
+            return 0
+
+    def _get_cleaned_names(self) -> list[str]:
+        if (
+            self.input_area.content
+            and isinstance(self.input_area.content, Column)
+            and len(self.input_area.content.controls) > 1
+        ):
+            input_text = self.input_area.content.controls[1].value if self.input_area.content.controls[1] else ""
+            if input_text:
+                return [name.strip() for name in input_text.splitlines() if name.strip()]
+        return []
+
+    def _update_output_area(self, generated_names: list[str]):
+        if self.output_area and self.output_area.content and self.output_area.content.controls:
             self.output_area.content.controls[1].value = "\n".join(generated_names)
-        else:
-            print("Error: Output area not properly initialized")
-        self.output_area.update()
+            self.output_area.update()
