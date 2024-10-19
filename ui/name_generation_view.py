@@ -52,7 +52,7 @@ class NameGenerationView(UserControl):
         self.filter_area = Container(
             content=Column(
                 [
-                    Text("Filtering Criteria:"),
+                    Text("Number of names to pick:"),
                     RadioGroup(
                         value=self.selected_num,
                         on_change=self.update_selected_num,
@@ -61,7 +61,7 @@ class NameGenerationView(UserControl):
                                 Radio(value="1", label="1"),
                                 Radio(value="2", label="2"),
                                 Radio(value="3", label="3"),
-                                Text("or enter a number:"),
+                                Radio(value="custom", label="Custom:"),
                                 self.num_names_input,
                             ],
                             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -111,15 +111,21 @@ class NameGenerationView(UserControl):
 
     def update_selected_num(self, e):
         self.selected_num = e.control.value
+        if self.selected_num != "custom":
+            self.num_names_input.value = ""
+            self.num_names_input.update()
         self.validate_input()
 
     def validate_input(self, e=None):
         try:
-            num_names = int(self.num_names_input.value or self.selected_num)
+            num_names = int(self.num_names_input.value) if self.selected_num == "custom" else int(self.selected_num)
         except ValueError:
             num_names = 0
-
-        names = self.input_area.content.controls[1].value.splitlines() if self.input_area.content and self.input_area.content.controls else []
+        names = []
+        if self.input_area.content and self.input_area.content.controls:
+            input_text = self.input_area.content.controls[1].value
+            if input_text:
+                names = [name.strip() for name in input_text.splitlines() if name.strip()]
 
         self.randomize_button.disabled = num_names > len(names)
         self.randomize_button.update()
@@ -127,11 +133,15 @@ class NameGenerationView(UserControl):
     def generate_random_name(self, e):
         # Get the number of names to generate
         try:
-            num_names = int(self.num_names_input.value or self.selected_num)
+            num_names = int(self.num_names_input.value) if self.selected_num == "custom" else int(self.selected_num)
         except ValueError:
             num_names = 0
-        # Split names by new line
-        names = self.input_area.content.controls[1].value.splitlines() if self.input_area.content and self.input_area.content.controls else []
+        # Split names by new line and strip spaces
+        names = []
+        if self.input_area.content and self.input_area.content.controls:
+            input_text = self.input_area.content.controls[1].value
+            if input_text:
+                names = [name.strip() for name in input_text.splitlines() if name.strip()]
 
         # Call the controller to generate names
         generated_names = self.controller.generate_name(names, num_names)
