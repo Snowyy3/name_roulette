@@ -8,8 +8,8 @@ from controller.main_controller import MainController
 def main(page: Page) -> None:
     page.title = "Name roulette (v0.1)"
     page.theme_mode = ft.ThemeMode.LIGHT  # Can set to system later, add add toggle
-    page.padding = 20
-    page.window.min_width = 600
+    page.padding = 0
+    page.window.min_width = 400
     page.window.min_height = 400
     page.auto_scroll = False
     page.scroll = None
