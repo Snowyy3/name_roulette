@@ -41,19 +41,19 @@ class MainView(UserControl):
             destinations=[
                 NavigationRailDestination(
                     label="Name Picker",
-                    icon=ft.icons.SHUFFLE_ROUNDED,
+                    icon=ft.icons.SHUFFLE_OUTLINED,
                     selected_icon=ft.icons.SHUFFLE_ROUNDED,
                     padding=10,
                 ),
                 NavigationRailDestination(
                     label="Group Randomizer",
-                    icon=ft.icons.GROUPS_2_ROUNDED,
+                    icon=ft.icons.GROUPS_2_OUTLINED,
                     selected_icon=ft.icons.GROUPS_2_ROUNDED,
                     padding=10,
                 ),
                 NavigationRailDestination(
                     label="Settings",
-                    icon=ft.icons.SETTINGS,
+                    icon=ft.icons.SETTINGS_OUTLINED,
                     selected_icon=ft.icons.SETTINGS,
                     padding=10,
                 ),
@@ -73,7 +73,7 @@ class MainView(UserControl):
                     Container(
                         content=self.left_sidebar,
                         expand=True,
-                        height=self.page.window.height - 100 if self.page else None,  # Subtract space for menu button
+                        height=self.page.window.height - 100 if self.page else None,  # Subtract space for menu button # type: ignore
                     ),
                 ],
                 expand=True,
