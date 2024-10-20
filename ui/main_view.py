@@ -10,21 +10,34 @@ from flet import (
     IconButton,
     Border,
     BorderSide,
+    ControlEvent,
 )
-from flet import ControlEvent
 
 from ui.name_generation_view import NameGenerationView
 
 
 class MainView(UserControl):
+    """
+    Main view for the Name Roulette application, managing navigation and content display.
+
+    Args:
+        page (Page): The Flet Page instance.
+        controller (MainController): The controller managing application logic.
+    """
+
     def __init__(self, page: Page, controller) -> None:
         super().__init__()
         self.page = page
         self.controller = controller
         self.name_generation_view = NameGenerationView(self.controller)
+        self.page.on_resize = self.on_resize
 
-    def build(self) -> Row:  # type: ignore
-        # Menu button
+    def build(self) -> Row: # type: ignore
+        """Builds the main layout of the application.
+
+        Returns:
+            Row: The root layout containing the sidebar and content area.
+        """
         self.menu_button = IconButton(
             icon=ft.icons.MENU,
             on_click=self.toggle_left_sidebar,
@@ -59,7 +72,7 @@ class MainView(UserControl):
                 ),
             ],
             on_change=self.change_left_sidebar,
-            bgcolor=ft.colors.TRANSPARENT,  # Make the NavigationRail background transparent
+            bgcolor=ft.colors.TRANSPARENT,  # Make the NavigationRail background transparent (to make the color defined below works for all the sidebar)
         )
 
         # Left sidebar container
@@ -73,9 +86,7 @@ class MainView(UserControl):
                     Container(
                         content=self.left_sidebar,
                         expand=True,
-                        height=self.page.window.height - 100
-                        if self.page
-                        else None,  # Subtract space for menu button # type: ignore
+                        height=(self.page.window.height - 100 if self.page and self.page.window.height else 0),  # Subtract space for menu button
                     ),
                 ],
                 expand=True,
@@ -83,7 +94,6 @@ class MainView(UserControl):
             bgcolor="#E6F3FF",  # Left sidebar color (Pastel light blue)
             width=60,
             border=Border(right=BorderSide(width=1, color=ft.colors.OUTLINE)),
-            height=self.page.window.height if self.page else None,
             animate=ft.animation.Animation(200, ft.animation.AnimationCurve.EASE_OUT_CUBIC),
         )
 
@@ -98,21 +108,30 @@ class MainView(UserControl):
         )
 
     def toggle_left_sidebar(self, event: ControlEvent) -> None:
+        """Toggles the expanded state of the left sidebar."""
         self.left_sidebar.extended = not self.left_sidebar.extended
         self.left_sidebar.label_type = (
-            ft.NavigationRailLabelType.ALL if self.left_sidebar.extended else ft.NavigationRailLabelType.NONE
+            ft.NavigationRailLabelType.ALL
+            if self.left_sidebar.extended
+            else ft.NavigationRailLabelType.NONE
         )
         self.left_sidebar_container.width = 200 if self.left_sidebar.extended else 60
         self.left_sidebar_container.update()
         self.left_sidebar.update()
 
     def change_left_sidebar(self, event: ControlEvent) -> None:
+        """Handles changes in the selected index of the left sidebar navigation."""
         selected_index = event.control.selected_index
         if selected_index == 0:
             self.content_area.content = self.name_generation_view
         elif selected_index == 1:
             self.content_area.content = ft.Text("Group Randomizer, coming soon!")
-        elif selected_index == 2:  # Settings
+        elif selected_index == 2:
             self.content_area.content = ft.Text("Settings, coming soon!")
-
         self.content_area.update()
+
+    def on_resize(self, event) -> None:
+        """Updates the height of the left sidebar container on window resize."""
+        if self.page:
+            self.left_sidebar_container.height = self.page.window.height
+            self.left_sidebar_container.update()
