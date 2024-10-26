@@ -54,3 +54,7 @@ class GroupFormationController:
         except (ValueError, TypeError) as e:
             print(f"Error in manual assignment: {e}")
             return []
+
+
+
+# -> Phần output có vẫn đề, chưa chia đc theo group size + ch (chưa cần quan tâm đên gender), ai làm thì fixx lỗi này nhé
