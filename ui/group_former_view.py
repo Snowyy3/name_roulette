@@ -17,7 +17,8 @@ class GroupFormationView(UserControl):
         super().__init__()
         self.controller = controller
         self.show_gender_column = False  # Track visibility of gender column
-        self.group_size = 1  # Default group size
+        self.group_size = None  # Default group size
+        self.group_num = 1 
 
     def build(self) -> Column:
         """Builds the group formation view layout."""
@@ -62,6 +63,13 @@ class GroupFormationView(UserControl):
             on_change=self.update_group_size,
         )
 
+        self.group_num_input = TextField(
+            label="Number of Group",
+            value=str(self.group_num),
+            width=150,
+            on_change=self.update_group_num,
+        )
+
         # Button to form groups based on inputs
         self.form_groups_button = ElevatedButton(
             text="Generate Groups",
@@ -74,7 +82,8 @@ class GroupFormationView(UserControl):
             label="Generated Group(s):",
             enable_suggestions=False,
             expand=True,
-            height=100,
+            height=200,
+            multiline= True,
         )
 
         # Layout for the input fields with optional gender column
@@ -100,10 +109,11 @@ class GroupFormationView(UserControl):
                 Text("Number of names to pick:"),
                 self.gender_filter_dropdown,
                 self.group_size_input,
+                self.group_num_input,
                 self.form_groups_button,
             ],
             alignment="start",
-            spacing=15,
+            spacing=20,
         )
 
         # Arrange main layout like the provided example image
@@ -122,7 +132,7 @@ class GroupFormationView(UserControl):
             ],
             alignment="start",
             expand=True,
-            spacing=20,
+            spacing=25,
         )
 
     def toggle_gender_column(self, event):
@@ -142,14 +152,38 @@ class GroupFormationView(UserControl):
             self.group_size_input.error_text = None
             self.group_size_input.update()
 
+    def update_group_num(self, event):
+        """Updates the group size from the input field."""
+        try:
+            self.group_num = int(event.control.value)
+        except ValueError:
+            self.group_num_input.error_text = "Please enter a valid number."
+            self.group_num_input.update()
+        else:
+            self.group_num_input.error_text = None
+            self.group_num_input.update()
+
     def form_groups(self, event):
         """Handles the group formation based on the inputs."""
         names = self.name_input.value.splitlines()  
         gender_filter = self.gender_filter_dropdown.value if self.show_gender_column else None
         group_size = self.group_size
+        group_num = self.group_num
 
         # Placeholder for group formation logic
-        generated_groups = names # This is output (list variable)
-        self.output_area.value = generated_groups
+        #generated_groups = names 
+        generated_groups = self.controller.form_groups(names,group_size,group_num)# This is output (list variable)
+        
+        # # Format the groups output
+        formatted_output = ""
+        for i, group in enumerate(generated_groups, start=1):
+            formatted_output += f"Group {i}:\n"
+            formatted_output += "\n".join([f" - {member}" for member in group]) + "\n\n"
+
+        # Set and update the output area
+        self.output_area.value = formatted_output.strip()  # Remove any trailing whitespace
         self.output_area.update()
+
+        # self.output_area.value = generated_groups
+        # self.output_area.update()
 
