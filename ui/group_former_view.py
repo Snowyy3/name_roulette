@@ -171,7 +171,6 @@ class GroupFormationView(UserControl):
         group_num = self.group_num
 
         # Placeholder for group formation logic
-        #generated_groups = names 
         generated_groups = self.controller.form_groups(names,group_size,group_num)# This is output (list variable)
         
         # # Format the groups output
@@ -184,6 +183,4 @@ class GroupFormationView(UserControl):
         self.output_area.value = formatted_output.strip()  # Remove any trailing whitespace
         self.output_area.update()
 
-        # self.output_area.value = generated_groups
-        # self.output_area.update()
 
