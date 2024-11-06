@@ -6,7 +6,7 @@ from controller.main_controller import MainController
 
 
 def main(page: Page) -> None:
-    page.title = "Name roulette (v0.1)"
+    page.title = "Name roulette (v0.5)"
     page.theme_mode = ft.ThemeMode.LIGHT  # Can set to system later, add add toggle
     page.padding = 0
     page.window.min_width = 400
