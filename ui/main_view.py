@@ -14,6 +14,7 @@ from flet import (
 )
 
 from ui.name_generation_view import NameGenerationView
+from ui.group_former_view import GroupFormationView
 
 
 class MainView(UserControl):
@@ -30,6 +31,7 @@ class MainView(UserControl):
         self.page = page
         self.controller = controller
         self.name_generation_view = NameGenerationView(self.controller)
+        self.group_former_view = GroupFormationView(self.controller)
         self.page.on_resize = self.on_resize
 
     def build(self) -> Row: # type: ignore
@@ -125,7 +127,7 @@ class MainView(UserControl):
         if selected_index == 0:
             self.content_area.content = self.name_generation_view
         elif selected_index == 1:
-            self.content_area.content = ft.Text("Group Randomizer, coming soon!")
+            self.content_area.content = self.group_former_view
         elif selected_index == 2:
             self.content_area.content = ft.Text("Settings, coming soon!")
         self.content_area.update()
