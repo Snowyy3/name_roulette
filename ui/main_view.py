@@ -33,6 +33,7 @@ class MainView(UserControl):
         self.name_generation_view = NameGenerationView(self.controller)
         self.group_former_view = GroupFormationView(self.controller)
         self.page.on_resize = self.on_resize
+        self.current_view = 0  # Track current view: 0=name picker, 1=group former, 2=settings
 
     def build(self) -> Row: # type: ignore
         """Builds the main layout of the application.
@@ -151,16 +152,37 @@ class MainView(UserControl):
         self.left_sidebar.update()
         self.bottom_nav.update()
 
+    def update_navigation_state(self, selected_view: int) -> None:
+        """
+        Updates the selection state of both navigation rails based on the selected view.
+        
+        Args:
+            selected_view (int): 0=name picker, 1=group former, 2=settings
+        """
+        self.current_view = selected_view
+        
+        # Update top nav rail
+        if selected_view in [0, 1]:
+            self.left_sidebar.selected_index = selected_view
+            self.bottom_nav.selected_index = None
+        else:  # settings view
+            self.left_sidebar.selected_index = None
+            self.bottom_nav.selected_index = 0
+            
+        self.left_sidebar.update()
+        self.bottom_nav.update()
+
     def change_bottom_nav(self, event: ControlEvent) -> None:
         """Handles changes in the selected index of the bottom navigation."""
-        self.left_sidebar.selected_index = None  # Deselect top nav
+        self.update_navigation_state(2)  # Settings view
         self.content_area.content = ft.Text("Settings, coming soon!")
         self.content_area.update()
 
     def change_left_sidebar(self, event: ControlEvent) -> None:
         """Handles changes in the selected index of the left sidebar navigation."""
-        self.bottom_nav.selected_index = None  # Deselect bottom nav
         selected_index = event.control.selected_index
+        self.update_navigation_state(selected_index)
+        
         if selected_index == 0:
             self.content_area.content = self.name_generation_view
         elif selected_index == 1:
