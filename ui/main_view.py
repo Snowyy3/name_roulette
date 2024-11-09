@@ -2,7 +2,8 @@ import flet as ft
 from flet import UserControl, Page, Row, Container, Column
 from ui.name_generation_view import NameGenerationView
 from ui.group_former_view import GroupFormationView
-from ui.left_sidebar import LeftSidebar, View
+from ui.left_sidebar import LeftSidebar
+from ui.views import View
 
 
 class MainView(UserControl):
@@ -34,7 +35,7 @@ class MainView(UserControl):
         # Create the header with proper Row initialization
         header_row = Row(
             controls=[
-                ft.Text(self.current_view.name.replace('_', ' ').title()),
+                ft.Text(self.current_view.name.replace("_", " ").title()),
                 Container(expand=True),  # Replaces Spacer
                 ft.IconButton(
                     icon=ft.icons.LIST_ALT_ROUNDED,
@@ -81,7 +82,7 @@ class MainView(UserControl):
         if isinstance(self.header.content, Row):
             title_text = self.header.content.controls[0]
             if isinstance(title_text, ft.Text):
-                title_text.value = view.name.replace('_', ' ').title()
+                title_text.value = view.name.replace("_", " ").title()
                 self.header.update()
 
         # Update content below header with proper type checking
