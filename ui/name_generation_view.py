@@ -10,6 +10,7 @@ from flet import (
     ElevatedButton,
     RadioGroup,
     Radio,
+    ControlEvent,
 )
 
 
@@ -25,7 +26,9 @@ class NameGenerationView(UserControl):
         super().__init__()
         self.controller = controller
         self.num_names_input = TextField(
-            value="", width=50, on_change=self.validate_input
+            value="",
+            width=50,
+            on_change=self.validate_input,
         )
         self.selected_num = "1"
         self.randomize_button = ElevatedButton(
@@ -158,11 +161,11 @@ class NameGenerationView(UserControl):
             padding=20,
         )
 
-    def update_selected_num(self, e):
+    def update_selected_num(self, e: ControlEvent) -> None:
         """Updates the selected number of names to pick and validates input.
 
         Args:
-            e (flet.ControlEvent): The event triggered by the RadioGroup.
+            e (ControlEvent): The event triggered by the RadioGroup.
         """
         self.selected_num = e.control.value
         if self.selected_num != "custom":
@@ -170,22 +173,22 @@ class NameGenerationView(UserControl):
             self.num_names_input.update()
         self.validate_input()
 
-    def validate_input(self, e=None):
+    def validate_input(self, e: ControlEvent=None) -> None:
         """Validates the input and enables/disables the randomize button.
 
         Args:
-            e (flet.ControlEvent, optional): The event triggering validation. Defaults to None.
+            e (ControlEvent, optional): The event triggering validation. Defaults to None.
         """
         num_names = self._get_num_names()
         names = self._get_cleaned_names()
         self.randomize_button.disabled = num_names > len(names)
         self.randomize_button.update()
 
-    def generate_random_name(self, e):
+    def generate_random_name(self, e: ControlEvent) -> None:
         """Generates random names and updates the output area.
 
         Args:
-            e (flet.ControlEvent): The event triggered by the randomize button.
+            e (ControlEvent): The event triggered by the randomize button.
         """
         num_names = self._get_num_names()
         names = self._get_cleaned_names()
@@ -199,11 +202,7 @@ class NameGenerationView(UserControl):
             int: The number of names to generate.
         """
         try:
-            return (
-                int(self.num_names_input.value)
-                if self.selected_num == "custom"
-                else int(self.selected_num)
-            )
+            return int(self.num_names_input.value) if self.selected_num == "custom" else int(self.selected_num)
         except ValueError:
             return 0
 

@@ -32,7 +32,7 @@ class LeftSidebar(UserControl):
             ),
             margin=ft.margin.only(top=16, bottom=16),
             height=60,
-            width=100,
+            width=80,
         )
 
         self.main_nav = NavigationRail(
@@ -100,7 +100,7 @@ class LeftSidebar(UserControl):
                 spacing=0,
             ),
             bgcolor="#E6F3FF",
-            width=100,
+            width=80,
             border=Border(right=BorderSide(width=1, color=ft.colors.OUTLINE)),
             animate=ft.animation.Animation(200, ft.animation.AnimationCurve.EASE_OUT_CUBIC),
         )
@@ -115,7 +115,7 @@ class LeftSidebar(UserControl):
         self.main_nav.label_type = label_type
         self.bottom_nav.label_type = label_type
 
-        self.container.width = 200 if self.main_nav.extended else 100
+        self.container.width = 200 if self.main_nav.extended else 80
         self.container.update()
         self.main_nav.update()
         self.bottom_nav.update()

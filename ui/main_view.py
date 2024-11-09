@@ -36,14 +36,14 @@ class MainView(UserControl):
         header_row = Row(
             controls=[
                 ft.Text(self.current_view.name.replace("_", " ").title()),
-                Container(expand=True),  # Replaces Spacer
+                Container(expand=True),
                 ft.IconButton(
                     icon=ft.icons.LIST_ALT_ROUNDED,
-                    on_click=lambda e: self.handle_view_change(View.MANAGE_LISTS),
+                    on_click=self.handle_view_change(View.MANAGE_LISTS),
                 ),
                 ft.IconButton(
                     icon=ft.icons.MANAGE_ACCOUNTS,
-                    on_click=lambda e: self.handle_view_change(View.USER_ACCOUNTS),
+                    on_click=self.handle_view_change(View.USER_ACCOUNTS),
                 ),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -52,7 +52,7 @@ class MainView(UserControl):
         self.header = Container(
             content=header_row,
             bgcolor="#CCE0FF",  # Slightly darker than left sidebar
-            padding=10,
+            padding=0,
         )
 
         # Create main content column with proper initialization
