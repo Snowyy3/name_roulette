@@ -1,11 +1,10 @@
-# model/data_manager.py
 import json
 import os
 from datetime import datetime
 
 
 class DataManager:
-    def __init__(self, file_path=r'name_roulette/data/user.json'):
+    def __init__(self, file_path=r"name_roulette/data/user.json"):
         """
         Initialize the DataManager with a file path for storing data.
         """
@@ -19,9 +18,9 @@ class DataManager:
         if not os.path.exists(self.file_path):
             print(f"File {self.file_path} not found. Creating a new file.")
             return {}  # Return an empty dict if file doesn't exist
-        
+
         try:
-            with open(self.file_path, 'r') as file:
+            with open(self.file_path, "r") as file:
                 return json.load(file)
         except json.JSONDecodeError:
             print(f"Error decoding JSON in file {self.file_path}. Creating a new file.")
@@ -34,10 +33,10 @@ class DataManager:
         """
         Save the current data to the JSON file.
         """
-        with open(self.file_path, 'w') as file:
+        with open(self.file_path, "w") as file:
             json.dump(self.data, file, indent=4)
 
-    def create_list(self, list_name, records, required_fields=['name'], optional_fields=[]):
+    def create_list(self, list_name, records, required_fields=["name"], optional_fields=[]):
         """
         Create a new list of records with validation.
         """
@@ -53,20 +52,20 @@ class DataManager:
             group_name (str): Name of the group formation event.
             groups (list[list[str]]): The group formation results from GroupFormer.
         """
-        if 'group_formations' not in self.data:
-            self.data['group_formations'] = {}
+        if "group_formations" not in self.data:
+            self.data["group_formations"] = {}
 
         # Count existing results to determine the next 'Result #'
-        current_result_count = len(self.data['group_formations'])
+        current_result_count = len(self.data["group_formations"])
         result_key = f"Result #{current_result_count + 1}"
 
         # Save the new group formation with the new result key
-        self.data['group_formations'][result_key] = groups
+        self.data["group_formations"][result_key] = groups
         self.save_data()
 
         print(f"Group formation saved successfully as '{result_key}'!")
 
-    def edit_list(self, list_name, new_records, required_fields=['name'], optional_fields=[]):
+    def edit_list(self, list_name, new_records, required_fields=["name"], optional_fields=[]):
         """
         Edit an existing list of records.
         """
@@ -102,22 +101,22 @@ class DataManager:
                     raise ValueError(f"'{field}' is a required field and must be present in each record.")
 
             # Validate birthday format
-            if 'birthday' in record:
+            if "birthday" in record:
                 try:
-                    datetime.strptime(record['birthday'], '%d/%m/%Y')
+                    datetime.strptime(record["birthday"], "%d/%m/%Y")
                 except ValueError:
                     raise ValueError("Birthday must be in 'DD/MM/YYYY' format.")
 
             # Validate GPA (as float between 0 and 4.0)
-            if 'gpa' in record and not (0 <= float(record['gpa']) <= 4.0):
+            if "gpa" in record and not (0 <= float(record["gpa"]) <= 4.0):
                 raise ValueError("GPA must be between 0 and 4.0.")
 
-# Example Usage
+
 if __name__ == "__main__":
     data_manager = DataManager()
 
     # Example group formation result
     groups = [["Alice", "Bob"], ["Charlie", "David"]]
-    
+
     # Save the group formation result
     data_manager.save_group_formation(" ", groups)
