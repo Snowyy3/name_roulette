@@ -66,7 +66,7 @@ class LeftSidebar(UserControl):
             extended=False,
             min_width=80,
             min_extended_width=180,
-            group_alignment=0,
+            group_alignment=-1,
             destinations=[
                 NavigationRailDestination(
                     label="Settings",

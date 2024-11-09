@@ -23,6 +23,30 @@ class MainView(UserControl):
         self.group_former_view = GroupFormationView(self.controller)
         self.page.on_resize = self.on_resize
         self.current_view = View.NAME_PICKER
+        
+        # Set the AppBar with adjusted icon spacing
+        self.page.appbar = ft.AppBar(
+            title=ft.Text(self.current_view.name.replace("_", " ").title()),
+            bgcolor="#CCE0FF",
+            actions=[
+                Container(
+                    content=Row(
+                        controls=[
+                            ft.IconButton(
+                                icon=ft.icons.LIST_ALT_ROUNDED,
+                                on_click=lambda _: self.handle_view_change(View.MANAGE_LISTS),
+                            ),
+                            ft.IconButton(
+                                icon=ft.icons.MANAGE_ACCOUNTS,
+                                on_click=lambda _: self.handle_view_change(View.USER_ACCOUNTS),
+                            ),
+                        ],
+                        spacing=10,  # Add spacing between icons
+                    ),
+                    margin=ft.margin.only(right=20),  # Add right margin to move icons away from edge
+                )
+            ],
+        )
 
     def build(self) -> Row:
         """Builds the main layout of the application.
@@ -32,39 +56,15 @@ class MainView(UserControl):
         """
         self.left_sidebar = LeftSidebar(self.handle_view_change)
 
-        # Create the header with proper Row initialization
-        header_row = Row(
-            controls=[
-                ft.Text(self.current_view.name.replace("_", " ").title()),
-                Container(expand=True),
-                ft.IconButton(
-                    icon=ft.icons.LIST_ALT_ROUNDED,
-                    on_click=self.handle_view_change(View.MANAGE_LISTS),
-                ),
-                ft.IconButton(
-                    icon=ft.icons.MANAGE_ACCOUNTS,
-                    on_click=self.handle_view_change(View.USER_ACCOUNTS),
-                ),
-            ],
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        )
-
-        self.header = Container(
-            content=header_row,
-            bgcolor="#CCE0FF",  # Slightly darker than left sidebar
-            padding=0,
-        )
-
-        # Create main content column with proper initialization
+        # Create main content column
         main_content = Column(
             controls=[
-                self.header,
                 self.name_generation_view,  # Default view content
             ],
             expand=True,
         )
 
-        # Update content_area with proper initialization
+        # Update content_area
         self.content_area = Container(
             content=main_content,
             expand=True,
@@ -78,14 +78,11 @@ class MainView(UserControl):
     def handle_view_change(self, view: View):
         self.current_view = view  # Update the current view
 
-        # Update header text using the properly initialized Row
-        if isinstance(self.header.content, Row):
-            title_text = self.header.content.controls[0]
-            if isinstance(title_text, ft.Text):
-                title_text.value = view.name.replace("_", " ").title()
-                self.header.update()
+        # Update the page's AppBar title instead of instance variable
+        self.page.appbar.title.value = view.name.replace("_", " ").title()
+        self.page.update()
 
-        # Update content below header with proper type checking
+        # Update content below AppBar
         if isinstance(self.content_area.content, Column):
             content_column = self.content_area.content
             if view == View.NAME_PICKER:
