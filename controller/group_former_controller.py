@@ -23,7 +23,9 @@ class GroupFormationController:
             print(f"Error forming groups: {e}")
             return []
 
-    def distribute_remaining(self, groups: list[list[str]], remaining_members: list[str], distribute_randomly: bool = True) -> list[list[str]]:
+    def distribute_remaining(
+        self, groups: list[list[str]], remaining_members: list[str], distribute_randomly: bool = True
+    ) -> list[list[str]]:
         """
         Handles any remaining members by either distributing them across groups or adding as a separate group.
 
@@ -35,7 +37,9 @@ class GroupFormationController:
         Returns:
             list[list[str]]: Groups after handling remaining members.
         """
-        return self.group_former.handle_uneven_groups(groups, remaining_members, distribute_randomly=distribute_randomly)
+        return self.group_former.handle_uneven_groups(
+            groups, remaining_members, distribute_randomly=distribute_randomly
+        )
 
     def manual_assign(self, groups: list[list[str]], assignments: dict[int, list[str]]) -> list[list[str]]:
         """
@@ -54,7 +58,6 @@ class GroupFormationController:
         except (ValueError, TypeError) as e:
             print(f"Error in manual assignment: {e}")
             return []
-
 
 
 # -> Phần output có vẫn đề, chưa chia đc theo group size + ch (chưa cần quan tâm đên gender), ai làm thì fixx lỗi này nhé

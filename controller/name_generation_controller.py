@@ -9,4 +9,3 @@ class NameGenerationController:
         # Example list of names
         names = ["Alice", "Bob", "Charlie", "David", "Eve"]
         return self.name_generator.get_random_names(names, num_names)
-
