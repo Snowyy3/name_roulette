@@ -56,9 +56,10 @@ class MainView(UserControl):
         """
         self.left_sidebar = LeftSidebar(self.handle_view_change)
 
-        # Create main content column
+        # Create main content column with placeholder for view content
         main_content = Column(
             controls=[
+                Container(),  # Empty container as placeholder
                 self.name_generation_view,  # Default view content
             ],
             expand=True,
@@ -76,15 +77,19 @@ class MainView(UserControl):
         )
 
     def handle_view_change(self, view: View):
-        self.current_view = view  # Update the current view
-
-        # Update the page's AppBar title instead of instance variable
+        """Handle view changes by updating the AppBar title and content area.
+        
+        Args:
+            view (View): The view to switch to.
+        """
+        self.current_view = view
         self.page.appbar.title.value = view.name.replace("_", " ").title()
         self.page.update()
 
-        # Update content below AppBar
+        # Update content
         if isinstance(self.content_area.content, Column):
             content_column = self.content_area.content
+            
             if view == View.NAME_PICKER:
                 view_content = self.name_generation_view
             elif view == View.GROUP_FORMER:
@@ -96,7 +101,12 @@ class MainView(UserControl):
             elif view == View.USER_ACCOUNTS:
                 view_content = ft.Text("User Accounts, coming soon!")
 
-            content_column.controls[1] = view_content
+            # Ensure we have space for the view content
+            if len(content_column.controls) < 2:
+                content_column.controls.append(view_content)
+            else:
+                content_column.controls[1] = view_content
+            
             self.content_area.update()
 
     def on_resize(self, _) -> None:
