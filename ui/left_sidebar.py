@@ -66,7 +66,7 @@ class LeftSidebar(UserControl):
             extended=False,
             min_width=80,
             min_extended_width=180,
-            group_alignment=-1,
+            group_alignment=-0.9,
             destinations=[
                 NavigationRailDestination(
                     label="Settings",
@@ -85,14 +85,14 @@ class LeftSidebar(UserControl):
                     self.menu_container,
                     Container(
                         content=self.main_nav,
-                        height=160,
+                        height=140,
                     ),
                     Container(
                         expand=True,
                     ),
                     Container(
                         content=self.bottom_nav,
-                        height=140,
+                        height=160,
                         margin=ft.margin.only(bottom=20),
                     ),
                 ],

@@ -27,7 +27,7 @@ class NameGenerationView(UserControl):
         self.controller = controller
         self.num_names_input = TextField(
             value="",
-            width=50,
+            width=30,
             on_change=self.validate_input,
         )
         self.selected_num = "1"
@@ -68,7 +68,7 @@ class NameGenerationView(UserControl):
                     Text("Enter Names (one per line)"),
                     TextField(
                         multiline=True,
-                        min_lines=10,
+                        min_lines=8,
                         max_lines=20,
                         expand=True,
                         on_change=self.validate_input,
