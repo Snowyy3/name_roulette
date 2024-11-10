@@ -44,13 +44,15 @@ class NameGenerationView(UserControl):
         """Builds the main layout of the Name Generation view.
 
         Returns:
-            Row: The root layout of the view.
+            Row: The root layout with three columns.
         """
         return Row(
             [
                 self.input_area,
                 self._build_divider(),
-                self._build_right_column(),
+                self._build_filter_area(),
+                self._build_divider(),
+                self.output_area,
             ],
             spacing=0,
             expand=True,
@@ -90,23 +92,8 @@ class NameGenerationView(UserControl):
         """
         return VerticalDivider(width=1, color=ft.colors.OUTLINE)
 
-    def _build_right_column(self) -> Column:
-        """Builds the right column containing filter options and output area.
-
-        Returns:
-            Column: A column layout for filter options and output.
-        """
-        return Column(
-            [
-                self._build_filter_area(),
-                self.output_area,
-            ],
-            expand=1,
-            alignment=ft.MainAxisAlignment.START,
-        )
-
     def _build_filter_area(self) -> Container:
-        """Builds the area for filtering and controlling the number of names to pick.
+        """Builds the filter area with number selection and randomize button.
 
         Returns:
             Container: A container holding the filter controls.
@@ -134,6 +121,7 @@ class NameGenerationView(UserControl):
                 spacing=20,
                 alignment=ft.MainAxisAlignment.START,
             ),
+            expand=1,
             padding=20,
         )
 
@@ -157,7 +145,7 @@ class NameGenerationView(UserControl):
                 expand=True,
                 alignment=ft.MainAxisAlignment.START,
             ),
-            expand=True,
+            expand=1,
             padding=20,
         )
 
