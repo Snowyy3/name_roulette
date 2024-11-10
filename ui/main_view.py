@@ -23,7 +23,7 @@ class MainView(UserControl):
         self.group_former_view = GroupFormationView(self.controller)
         self.page.on_resize = self.on_resize
         self.current_view = View.NAME_PICKER
-        
+
         # Set the AppBar with adjusted icon spacing
         self.page.appbar = ft.AppBar(
             title=ft.Text(self.current_view.name.replace("_", " ").title()),
@@ -56,29 +56,35 @@ class MainView(UserControl):
         """
         self.left_sidebar = LeftSidebar(self.handle_view_change)
 
-        # Create main content column with placeholder for view content
+        # Create main content column with top alignment and padding
         main_content = Column(
             controls=[
-                Container(),  # Empty container as placeholder
+                Container(
+                    height=40,  # Add spacing at top
+                ),
                 self.name_generation_view,  # Default view content
             ],
             expand=True,
+            alignment=ft.MainAxisAlignment.START,
+            spacing=0,  # Ensure no extra spacing between containers
         )
 
-        # Update content_area
+        # Update content_area with top alignment
         self.content_area = Container(
             content=main_content,
             expand=True,
+            alignment=ft.alignment.top_left,
         )
 
         return Row(
             controls=[self.left_sidebar, self.content_area],
             expand=True,
+            vertical_alignment=ft.CrossAxisAlignment.START,  # Add this line
         )
 
     def handle_view_change(self, view: View):
         """Handle view changes by updating the AppBar title and content area.
-        
+
         Args:
             view (View): The view to switch to.
         """
@@ -89,7 +95,7 @@ class MainView(UserControl):
         # Update content
         if isinstance(self.content_area.content, Column):
             content_column = self.content_area.content
-            
+
             if view == View.NAME_PICKER:
                 view_content = self.name_generation_view
             elif view == View.GROUP_FORMER:
@@ -106,7 +112,7 @@ class MainView(UserControl):
                 content_column.controls.append(view_content)
             else:
                 content_column.controls[1] = view_content
-            
+
             self.content_area.update()
 
     def on_resize(self, _) -> None:
