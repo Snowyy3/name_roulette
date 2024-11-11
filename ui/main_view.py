@@ -24,6 +24,15 @@ class MainView(UserControl):
         self.page.on_resize = self.on_resize
         self.current_view = View.NAME_PICKER
 
+        self.manage_lists_btn = ft.IconButton(
+            icon=ft.icons.BOOKMARKS_OUTLINED,
+            on_click=lambda _: self.handle_view_change(View.MANAGE_LISTS),
+        )
+        self.user_accounts_btn = ft.IconButton(
+            icon=ft.icons.MANAGE_ACCOUNTS_OUTLINED,
+            on_click=lambda _: self.handle_view_change(View.USER_ACCOUNTS),
+        )
+
         # Set the AppBar with adjusted icon spacing
         self.page.appbar = ft.AppBar(
             title=ft.Text(self.current_view.name.replace("_", " ").title()),
@@ -32,14 +41,8 @@ class MainView(UserControl):
                 Container(
                     content=Row(
                         controls=[
-                            ft.IconButton(
-                                icon=ft.icons.BOOKMARK,
-                                on_click=lambda _: self.handle_view_change(View.MANAGE_LISTS),
-                            ),
-                            ft.IconButton(
-                                icon=ft.icons.MANAGE_ACCOUNTS,
-                                on_click=lambda _: self.handle_view_change(View.USER_ACCOUNTS),
-                            ),
+                            self.manage_lists_btn,
+                            self.user_accounts_btn,
                         ],
                         spacing=10,  # Add spacing between icons
                     ),
@@ -91,6 +94,13 @@ class MainView(UserControl):
         self.current_view = view
         self.page.appbar.title.value = view.name.replace("_", " ").title()
         self.page.update()
+
+        self.manage_lists_btn.icon = ft.icons.BOOKMARKS if view == View.MANAGE_LISTS else ft.icons.BOOKMARKS_OUTLINED
+        self.user_accounts_btn.icon = (
+            ft.icons.MANAGE_ACCOUNTS if view == View.USER_ACCOUNTS else ft.icons.MANAGE_ACCOUNTS_OUTLINED
+        )
+        self.manage_lists_btn.update()
+        self.user_accounts_btn.update()
 
         # Update content
         if isinstance(self.content_area.content, Column):

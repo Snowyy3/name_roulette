@@ -45,8 +45,8 @@ class LeftSidebar(UserControl):
             destinations=[
                 NavigationRailDestination(
                     label="Name Picker",
-                    icon=ft.icons.SHUFFLE_OUTLINED,
-                    selected_icon=ft.icons.SHUFFLE_ROUNDED,
+                    icon=ft.icons.PERSON_OUTLINED,  # Changed from SHUFFLE_OUTLINED
+                    selected_icon=ft.icons.PERSON,  # Changed from SHUFFLE_ROUNDED
                     padding=10,
                 ),
                 NavigationRailDestination(
