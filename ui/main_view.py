@@ -33,7 +33,7 @@ class MainView(UserControl):
                     content=Row(
                         controls=[
                             ft.IconButton(
-                                icon=ft.icons.LIST_ALT_ROUNDED,
+                                icon=ft.icons.BOOKMARK,
                                 on_click=lambda _: self.handle_view_change(View.MANAGE_LISTS),
                             ),
                             ft.IconButton(
@@ -79,7 +79,7 @@ class MainView(UserControl):
         return Row(
             controls=[self.left_sidebar, self.content_area],
             expand=True,
-            vertical_alignment=ft.CrossAxisAlignment.START,  # Add this line
+            vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
     def handle_view_change(self, view: View):

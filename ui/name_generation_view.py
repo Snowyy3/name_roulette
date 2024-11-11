@@ -12,19 +12,35 @@ from flet import (
     Radio,
     ControlEvent,
 )
+from model.name_generator import NameGenerator
 
 
 class NameGenerationView(UserControl):
-    """
-    View for name generation in the Name Roulette application.
+    """A view component for the name generation interface.
 
-    Args:
-        controller (NameGenerationController): The controller managing this view's logic.
+    This class provides the UI for entering names, selecting generation options,
+    and displaying generated names.
+
+    Attributes:
+        controller: The controller managing this view's business logic.
+        name_generator (NameGenerator): Handler for name generation operations.
+        num_names_input (TextField): Input field for custom number selection.
+        selected_num (str): Currently selected number of names to generate.
+        randomize_button (ElevatedButton): Button to trigger name generation.
+        names_input (TextField): Input field for the list of names.
+        output_label (Text): Label for the output area.
+        output_text (Text): Display area for generated names.
     """
 
     def __init__(self, controller) -> None:
+        """Initialize the name generation view.
+
+        Args:
+            controller: The controller managing this view's business logic.
+        """
         super().__init__()
         self.controller = controller
+        self.name_generator = NameGenerator()
         self.num_names_input = TextField(
             value="",
             width=40,
@@ -133,7 +149,7 @@ class NameGenerationView(UserControl):
                                     spacing=8,  # Tight spacing between Custom label and input
                                 ),
                             ],
-                            spacing=16,  # Consistent spacing between radio options
+                            spacing=24,  # Consistent spacing between radio options
                         ),
                     ),
                     self.randomize_button,
@@ -141,7 +157,7 @@ class NameGenerationView(UserControl):
                 spacing=20,
                 alignment=ft.MainAxisAlignment.START,
             ),
-            expand=True,  # Change from False to True
+            expand=True,
             padding=20,
             alignment=ft.alignment.top_left,  # Align container content to top
         )
@@ -162,7 +178,7 @@ class NameGenerationView(UserControl):
                 expand=True,
                 alignment=ft.MainAxisAlignment.START,
             ),
-            expand=True,  # Change from False to True
+            expand=True,
             padding=20,
             alignment=ft.alignment.top_left,  # Align container content to top
         )
@@ -180,65 +196,24 @@ class NameGenerationView(UserControl):
         self.validate_input()
 
     def validate_input(self, e: ControlEvent = None) -> None:
-        """Validates the input and enables/disables the randomize button."""
-        names = self._get_cleaned_names()
-        num_names = self._get_num_names()
-
-        # Debug prints to help identify the issue
-        print(f"Names: {names}")
-        print(f"Number of names: {num_names}")
-        print(f"Selected num: {self.selected_num}")
-        print(f"Custom input value: {self.num_names_input.value}")
-
-        # New validation logic
-        is_valid = len(names) > 0  # Must have at least one name
-        if self.selected_num == "custom":
-            is_valid = is_valid and num_names > 0 and num_names <= len(names)
-        else:
-            is_valid = is_valid and int(self.selected_num) <= len(names)
-
+        """UI event handler for input validation."""
+        names = self.name_generator.get_cleaned_names(self.names_input.value or "")
+        is_valid = self.name_generator.validate_input(names, self.selected_num, self.num_names_input.value)
         self.randomize_button.disabled = not is_valid
         self.randomize_button.update()
 
     def generate_random_name(self, e: ControlEvent) -> None:
-        """Generates random names and updates the output area.
-
-        Args:
-            e (ControlEvent): The event triggered by the randomize button.
-        """
-        num_names = self._get_num_names()
-        names = self._get_cleaned_names()
-        generated_names = self.controller.generate_name(names, num_names)
+        """UI event handler for name generation."""
+        generated_names = self.name_generator.process_name_generation(
+            self.names_input.value or "", self.selected_num, self.num_names_input.value
+        )
         self._update_output_area(generated_names)
 
-    def _get_num_names(self) -> int:
-        """Retrieves the number of names to generate from user input.
-
-        Returns:
-            int: The number of names to generate.
-        """
-        try:
-            if self.selected_num == "custom":
-                value = self.num_names_input.value.strip()
-                return int(value) if value else 0
-            return int(self.selected_num)
-        except ValueError:
-            return 0
-
-    def _get_cleaned_names(self) -> list[str]:
-        """Retrieves and cleans the list of names from the input area.
-
-        Returns:
-            list[str]: A list of cleaned names.
-        """
-        input_text = self.names_input.value if self.names_input.value else ""
-        return [name.strip() for name in input_text.splitlines() if name.strip()]
-
-    def _update_output_area(self, generated_names: list[str]):
-        """Updates the output area with the generated names.
+    def _update_output_area(self, generated_names: list[str]) -> None:
+        """Update the output area with generated names.
 
         Args:
-            generated_names (list[str]): The list of generated names.
+            generated_names (list[str]): The list of generated names to display.
         """
         if self.output_area and self.output_area.content:
             # Update label based on number of names
