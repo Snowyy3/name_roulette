@@ -83,12 +83,24 @@ class NameGenerationView(UserControl):
             height=50,
         )
         self.names_input = TextField(  # Create reference to input field
+            label="Name",
             multiline=True,
             min_lines=8,
             max_lines=20,
-            expand=True,
+            expand=2,
             on_change=self.validate_input,
             border=ft.InputBorder.OUTLINE,
+        )
+        # Highlighted: Initialize new gender input field, initially hidden
+        self.gender_input = TextField(
+            label="Gender",
+            multiline=True,
+            min_lines=8,
+            max_lines=20,
+            expand=1,
+            on_change=self.validate_input,
+            border=ft.InputBorder.OUTLINE,
+            visible=False,  # Initially hidden
         )
         self.output_label = Text("Generated name:", weight=ft.FontWeight.BOLD)  # Store reference to label
         self.output_text = Text(  # Store reference to output text
@@ -150,28 +162,34 @@ class NameGenerationView(UserControl):
         Returns:
             Container: A container holding the name input TextField.
         """
+        name_gender_row = Row(
+            controls=[self.names_input, self.gender_input],  # Include gender_input in the row
+            spacing=8,
+            alignment=ft.MainAxisAlignment.START,
+            expand=True
+        )
+       
         return Container(
             content=Column(
                 [
                     Row(
                         [
-                            Text("Enter names (one per line)", weight=ft.FontWeight.BOLD),
                             self.save_list_button,
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
                     Container(
-                        content=self.names_input,  # Use the stored reference
+                        content=name_gender_row,  # Use the new row containing both input fields
                         expand=True,
                     ),
                 ],
-                spacing=20,  # Spacing between title and input field
+                spacing=20, 
                 expand=True,
-                scroll=ft.ScrollMode.AUTO,  # Enable scrolling
+                scroll=ft.ScrollMode.AUTO,  
             ),
             expand=True,
-            padding=20,  # Padding around the input area
-            alignment=ft.alignment.top_left,  # Align container content to top
+            padding=20,  
+            alignment=ft.alignment.top_left,  
         )
 
     def _build_divider(self) -> VerticalDivider:
@@ -342,6 +360,14 @@ class NameGenerationView(UserControl):
         if self.selected_gender_filter != "female":
             self.female_count_input.value = ""
             self.female_count_input.update()
+        # Highlighted: Show/hide gender input field based on selected gender filter
+        if self.selected_gender_filter in ["male", "female"]:
+            self.gender_input.visible = True  # Show gender input
+        else:
+            self.gender_input.visible = False  # Hide gender input
+        # Update UI to reflect changes
+        self.gender_input.update()
+        self.names_input.update()
 
     def copy_to_clipboard(self, e: ControlEvent) -> None:
         """Copy generated names to clipboard."""
