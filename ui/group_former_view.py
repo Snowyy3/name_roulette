@@ -65,12 +65,13 @@ class GroupFormationView(UserControl):
 
         self.generate_button = ElevatedButton(
             text="Generate Groups",
+            
             width=200,
             height=50,
             on_click=self.form_groups,
         )
 
-        self.output_label = Text("Generated Groups:")
+        self.output_label = Text("Generated Groups:", weight=ft.FontWeight.BOLD)
         self.output_text = Text(
             "",
             style=ft.TextThemeStyle.HEADLINE_SMALL,
