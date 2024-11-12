@@ -23,7 +23,7 @@ class GroupFormer:
             list[list[str]]: A list of groups.
         """
         if not names:
-            return []  # Return an empty list if names is empty
+            return []
 
         if group_size is None and num_groups is None:
             raise ValueError("Either 'group_size' or 'num_groups' must be provided.")
@@ -40,32 +40,35 @@ class GroupFormer:
         if num_groups is not None and num_groups <= 0:
             raise ValueError("'num_groups' must be a positive integer.")
 
-        if num_groups is not None:
-            group_size = len(names) // num_groups
-            remaining_members = len(names) % num_groups
+        rd.shuffle(names)  # Shuffle names to randomize grouping
+
+        # Điều chỉnh lại số lượng nhóm và kích thước nhóm
+        if num_groups is None:
+            # Tính số lượng nhóm khi chỉ định 'group_size'
+            num_groups = (len(names) + group_size - 1) // group_size  # Làm tròn lên
         else:
-            num_groups = len(names) // group_size
-            remaining_members = len(names) % group_size
+            # Tính kích thước nhóm khi chỉ định 'num_groups'
+            group_size = (len(names) + num_groups - 1) // num_groups  # Làm tròn lên
 
-        # Handle edge case: empty groups
-        if group_size == 0 or num_groups == 0:
-            return []
+        # Khởi tạo các nhóm
+        groups = [[] for _ in range(num_groups)]
 
-        rd.shuffle(names)
+        # Phân bổ các thành viên vào nhóm
+        index = 0
+        for name in names:
+            groups[index].append(name)
+            index = (index + 1) % num_groups
 
-        groups = [names[i * group_size : (i + 1) * group_size] for i in range(num_groups)]
+        # Điều chỉnh nếu có nhóm nào vượt quá `Max Group Size`
+        for i in range(num_groups):
+            while len(groups[i]) > group_size:
+                for j in range(num_groups):
+                    if len(groups[j]) < group_size:
+                        groups[j].append(groups[i].pop())
+                        break
 
-        # Ensure groups is always a list of lists
-        groups = [[name] if isinstance(name, str) else name for name in groups]
-
-        if remaining_members:
-            if num_groups is not None:
-                # Distribute remaining members randomly among the groups
-                for member in names[num_groups * group_size :]:
-                    rd.choice(groups).append(member)
-            else:
-                # Add remaining members as a separate group
-                groups.append(names[num_groups * group_size :])
+        # Lọc các nhóm rỗng nếu có
+        groups = [g for g in groups if g]
 
         return groups
 
