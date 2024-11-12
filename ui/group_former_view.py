@@ -23,6 +23,7 @@ class GroupFormationView(UserControl):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
+        self.show_gender_column = False
 
         # Initialize input fields
         self.names_input = TextField(
@@ -30,7 +31,34 @@ class GroupFormationView(UserControl):
             min_lines=8,
             max_lines=20,
             expand=True,
+            height= 200,
             border=ft.InputBorder.OUTLINE,
+        )
+
+        self.gender_input = TextField(
+            label="Gender",
+            multiline=True,
+            min_lines=10,
+            max_lines=20,
+            height= 200,
+            expand=True,
+        )
+
+        self.name_column = Column(
+            [self.names_input],
+            expand=2,
+        )
+
+        self.gender_column = Column(
+            [self.gender_input],
+            visible=self.show_gender_column,
+            expand=1,
+        )
+
+        self.input_area = Row(
+            [self.name_column, self.gender_column],
+            spacing=10,
+            expand=True,
         )
 
         self.group_size_input = TextField(
@@ -98,7 +126,7 @@ class GroupFormationView(UserControl):
                 [
                     Text("Enter names (one per line)", weight=ft.FontWeight.BOLD),
                     Container(
-                        content=self.names_input,
+                        content=self.input_area,
                         expand=True,
                     ),
                 ],
@@ -173,6 +201,13 @@ class GroupFormationView(UserControl):
         if self.selected_gender_filter != "female":
             self.female_count_input.value = ""
             self.female_count_input.update()
+        self.show_gender_column = self.selected_gender_filter != 'none'
+        if self.show_gender_column:
+            self.gender_column.visible = True
+            self.update() 
+        elif not self.show_gender_column:
+            self.gender_column.visible = False
+            self.update()             
     def _build_output_area(self) -> Container:
         return Container(
             content=Column(
