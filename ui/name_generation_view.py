@@ -225,7 +225,7 @@ class NameGenerationView(UserControl):
                                         self.male_count_input,
                                         Text(" males"),
                                     ],
-                                    spacing=8,  # Tight spacing between elements
+                                    spacing=8,  
                                 ),
                                 Row(
                                     [

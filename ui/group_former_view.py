@@ -1,14 +1,21 @@
 import flet as ft
 from flet import (
     UserControl,
+    Row,
     Column,
     Row,
     Container,
+    VerticalDivider,
+    Text,
     TextField,
     ElevatedButton,
-    Dropdown,
-    Text,
-    VerticalDivider,
+    RadioGroup,
+    Radio,
+    ControlEvent,
+    Divider,
+    IconButton,
+    icons,
+    Dropdown
 )
 
 
@@ -40,15 +47,20 @@ class GroupFormationView(UserControl):
             border=ft.InputBorder.OUTLINE,
         )
 
-        self.gender_filter = Dropdown(
-            label="Gender Filter",
-            options=[
-                ft.dropdown.Option("None"),
-                ft.dropdown.Option("Male"),
-                ft.dropdown.Option("Female"),
-            ],
-            width=150,
-            value="None",
+        self.gender_filter = Radio(value="none")
+        self.male_count_input = TextField(
+            value="",
+            width=40,
+            height=35,
+            text_align="center",
+            content_padding=8,
+        )
+        self.female_count_input = TextField(
+            value="",
+            width=40,
+            height=35,
+            text_align="center",
+            content_padding=8,
         )
 
         self.generate_button = ElevatedButton(
@@ -83,7 +95,7 @@ class GroupFormationView(UserControl):
         return Container(
             content=Column(
                 [
-                    Text("Enter names (one per line)"),
+                    Text("Enter names (one per line)", weight=ft.FontWeight.BOLD),
                     Container(
                         content=self.names_input,
                         expand=True,
@@ -105,10 +117,37 @@ class GroupFormationView(UserControl):
         return Container(
             content=Column(
                 [
-                    Text("Group Formation Settings:"),
+                    Text("Group Formation Settings:", weight=ft.FontWeight.BOLD),
                     self.group_size_input,
                     self.group_num_input,
-                    self.gender_filter,
+                    Divider(height=1, color=ft.colors.GREY_400),
+                    Text("Gender filler:", weight=ft.FontWeight.BOLD),
+                    RadioGroup(
+                        value=self.gender_filter,
+                        on_change=self.update_selected_gender,
+                        content=Column(
+                            [
+                                Radio(value="none", label="None"),
+                                Row(
+                                    [
+                                        Radio(value="male", label="At least "),
+                                        self.male_count_input,
+                                        Text(" males"),
+                                    ],
+                                    spacing=8,
+                                ),
+                                Row(
+                                    [
+                                        Radio(value="female", label="At least "),
+                                        self.female_count_input,
+                                        Text(" females"),
+                                    ],
+                                    spacing=8,
+                                ),
+                            ],
+                            spacing=8, 
+                        ),
+                ),
                     self.generate_button,
                 ],
                 spacing=20,
@@ -118,7 +157,21 @@ class GroupFormationView(UserControl):
             padding=20,
             alignment=ft.alignment.top_left,
         )
+    def update_selected_gender(self, e: ControlEvent) -> None:
+        """Updates the selected gender filter and clears unused input fields.
 
+        Args:
+            e (ControlEvent): The event triggered by the RadioGroup.
+        """
+        self.selected_gender_filter = e.control.value
+        # Clear male input if not selected
+        if self.selected_gender_filter != "male":
+            self.male_count_input.value = ""
+            self.male_count_input.update()
+        # Clear female input if not selected
+        if self.selected_gender_filter != "female":
+            self.female_count_input.value = ""
+            self.female_count_input.update()
     def _build_output_area(self) -> Container:
         return Container(
             content=Column(
