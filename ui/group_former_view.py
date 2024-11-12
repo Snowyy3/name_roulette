@@ -131,7 +131,7 @@ class GroupFormationView(UserControl):
                                 Radio(value="none", label="None"),
                                 Row(
                                     [
-                                        Radio(value="male", label="At least "),
+                                        Radio(value="male", label="Fix "),
                                         self.male_count_input,
                                         Text(" males"),
                                     ],
@@ -139,7 +139,7 @@ class GroupFormationView(UserControl):
                                 ),
                                 Row(
                                     [
-                                        Radio(value="female", label="At least "),
+                                        Radio(value="female", label="Fix "),
                                         self.female_count_input,
                                         Text(" females"),
                                     ],
