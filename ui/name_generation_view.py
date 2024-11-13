@@ -142,9 +142,13 @@ class NameGenerationView(UserControl):
         )
 
     def _build_input_area(self) -> Container:
-        """Builds the input area for entering names and genders."""
+        """Builds the input area for entering names and genders.
+
+        Returns:
+            Container: A container holding the input fields and labels.
+        """
         name_gender_row = Row(
-            controls=[self.names_input, self.gender_input],
+            controls=[self.names_input, self.gender_input],  # Include gender_input in the row
             spacing=8,
             alignment=ft.MainAxisAlignment.START,
             expand=True
@@ -153,25 +157,25 @@ class NameGenerationView(UserControl):
         return Container(
             content=Column(
                 [
-                    Text("Input:", weight=ft.FontWeight.BOLD),
                     Row(
                         [
-                            self.save_list_button,
+                            Text("Names:", weight=ft.FontWeight.BOLD),  # Add "Input:" label
+                            self.save_list_button,  # Position Save as list button next to Input label
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
                     Container(
-                        content=name_gender_row,
+                        content=name_gender_row,  # Use the new row containing both input fields
                         expand=True,
                     ),
                 ],
-                spacing=20,
+                spacing=20, 
                 expand=True,
-                scroll=ft.ScrollMode.AUTO,
+                scroll=ft.ScrollMode.AUTO,  
             ),
             expand=True,
-            padding=20,
-            alignment=ft.alignment.top_left,
+            padding=20,  
+            alignment=ft.alignment.top_left,  
         )
 
     def _build_divider(self) -> VerticalDivider:
