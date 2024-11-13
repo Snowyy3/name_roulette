@@ -18,14 +18,14 @@ class NameGenerator:
             list[tuple[str, str]]: List of tuples where each tuple is (name, gender).
         """
         names = names_text.strip().splitlines()
-        genders = genders_text.strip().splitlines() if genders_text else [""] * len(names)
+        genders = genders_text.strip().splitlines()
 
         # Combine names and genders based on line-by-line pairing
         cleaned_names = []
         for name, gender in zip(names, genders):
             name = name.strip()
             gender = gender.strip().lower()
-            if name:
+            if name and gender in {"male", "female"}:
                 cleaned_names.append((name, gender))
 
         return cleaned_names
@@ -43,8 +43,28 @@ class NameGenerator:
         females = [name for name, gender in names if gender == "female"]
         return {"male": males, "female": females}
 
-    def generate_names_with_fixed_gender(self, names: list[tuple[str, str]], male_count: int, female_count: int, total_count: int) -> list[str]:
-        """Generate names with specified counts of males and/or females within a total count.
+    def generate_random_names_without_gender(self, names_text: str, total_count: int) -> list[str]:
+        """Generate a list of random names without gender constraints.
+
+        Args:
+            names_text (str): Raw input text containing names.
+            total_count (int): Total number of names to select.
+
+        Returns:
+            list[str]: List of randomly selected names.
+        """
+        # Split names by line and clean them
+        names = [name.strip() for name in names_text.strip().splitlines() if name.strip()]
+        
+        # Check if there are enough names to meet the total count
+        if total_count > len(names):
+            return []  # Not enough names to meet the request
+
+        # Randomly sample the specified number of names
+        return rd.sample(names, total_count)
+
+    def generate_names_with_gender(self, names: list[tuple[str, str]], male_count: int, female_count: int, total_count: int) -> list[str]:
+        """Generate names with exact counts of male and female selections within a total count.
 
         Args:
             names (list[tuple[str, str]]): Pool of names with gender information.
@@ -53,45 +73,41 @@ class NameGenerator:
             total_count (int): Total number of names to select.
 
         Returns:
-            list[str]: List of randomly selected names meeting the gender and total requirements,
-                       or an empty list if constraints cannot be met.
+            list[str]: List of randomly selected names meeting the exact gender and total requirements,
+                    or an empty list if constraints cannot be met.
         """
         # Separate names by gender
         gendered_names = self.separate_by_gender(names)
 
-        # Check if there are enough names to meet the gender constraints
+        # Check if we have enough names for each gender and the total count constraint
         if male_count > len(gendered_names["male"]) or female_count > len(gendered_names["female"]):
-            return []  # Not enough names to satisfy the gender requirements
+            return []  # Not enough names to satisfy the exact counts
 
-        selected_names = []
-        remaining_pool = []
+        # Select exactly the specified number of male and female names
+        selected_males = rd.sample(gendered_names["male"], male_count)
+        selected_females = rd.sample(gendered_names["female"], female_count)
 
-        # First, select the specified number of names from the chosen gender
-        if male_count > 0:
-            rd.shuffle(gendered_names["male"])  # Randomize the male list
-            selected_males = gendered_names["male"][:male_count]
-            selected_names.extend(selected_males)
-            remaining_pool = gendered_names["female"]  # Opposite gender pool for remaining count
-        elif female_count > 0:
-            rd.shuffle(gendered_names["female"])  # Randomize the female list
-            selected_females = gendered_names["female"][:female_count]
-            selected_names.extend(selected_females)
-            remaining_pool = gendered_names["male"]  # Opposite gender pool for remaining count
+        # Combine selected male and female names
+        selected_names = selected_males + selected_females
 
-        # Calculate the number of names needed to reach total_count
+        # Calculate remaining slots for the other gender
         remaining_count = total_count - len(selected_names)
+        
+        # Add additional names from the remaining gender pool to fill the total count
+        if remaining_count > 0:
+            remaining_gender = "female" if male_count > 0 else "male"  # Choose opposite gender
+            remaining_pool = [name for name in gendered_names[remaining_gender] if name not in selected_names]
 
-        # Randomize the opposite gender pool and pick remaining names
-        rd.shuffle(remaining_pool)
-        if remaining_count > len(remaining_pool):
-            return []  # Not enough names left in the opposite gender to satisfy the total count requirement
-
-        selected_names.extend(remaining_pool[:remaining_count])
+            # Ensure we don't select more names than are available in the pool
+            if remaining_count > len(remaining_pool):
+                return []  # Not enough names to meet the total request
+            
+            selected_names += rd.sample(remaining_pool, remaining_count)
 
         return selected_names
 
     def process_name_generation(self, names_text: str, genders_text: str, selected_num: str, custom_value: str = "", male_count: int = 0, female_count: int = 0) -> list[str]:
-        """Processes the name generation request with gender-specific selection within a total count.
+        """Processes the name generation request with exact gender-specific selection within a total count.
 
         Args:
             names_text (str): Raw input text containing names.
@@ -104,16 +120,16 @@ class NameGenerator:
         Returns:
             list[str]: Generated names list or an empty list if constraints cannot be met.
         """
+        names = self.get_cleaned_names(names_text, genders_text)
+
         # Determine the total number of names to select
         total_count = self.get_num_names(selected_num, custom_value)
 
-        # If no gender constraint is applied, generate names without gender
-        if male_count == 0 and female_count == 0:
+        # Generate names based on the exact male and female counts within the total count
+        if male_count > 0 or female_count > 0:
+            return self.generate_names_with_gender(names, male_count, female_count, total_count)
+        else:
             return self.generate_random_names_without_gender(names_text, total_count)
-
-        # Otherwise, parse names with genders and apply gender constraints
-        names = self.get_cleaned_names(names_text, genders_text)
-        return self.generate_names_with_fixed_gender(names, male_count, female_count, total_count)
 
     def get_num_names(self, selected_num: str, custom_value: str = "") -> int:
         """Convert the selected number option to an integer value."""
