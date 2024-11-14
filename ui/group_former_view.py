@@ -15,7 +15,6 @@ from flet import (
     Divider,
     IconButton,
     icons,
-    Dropdown
 )
 
 
@@ -27,6 +26,7 @@ class GroupFormationView(UserControl):
 
         # Initialize input fields
         self.names_input = TextField(
+            label='Name',
             multiline=True,
             min_lines=8,
             max_lines=20,
@@ -60,7 +60,20 @@ class GroupFormationView(UserControl):
             spacing=10,
             expand=True,
         )
-
+        self.clear_result_button = ElevatedButton(
+            content=Row(
+                [
+                    ft.Icon(icons.CLEAR_ROUNDED),
+                    Text("Clear Result"),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=8,
+            ),
+            on_click=self.clear_result,
+            width=200,
+            disabled=True,
+            height=50,
+        )
         self.group_size_input = TextField(
             label="Max Group Size",
             width=150,
@@ -75,13 +88,14 @@ class GroupFormationView(UserControl):
             border=ft.InputBorder.OUTLINE,
         )
 
-        self.gender_filter = Radio(value="none")
+        self.selected_gender_filter = "none"
         self.male_count_input = TextField(
             value="",
             width=40,
             height=35,
             text_align="center",
             content_padding=8,
+            disabled= True
         )
         self.female_count_input = TextField(
             value="",
@@ -89,6 +103,7 @@ class GroupFormationView(UserControl):
             height=35,
             text_align="center",
             content_padding=8,
+            disabled= True
         )
 
         self.generate_button = ElevatedButton(
@@ -98,13 +113,20 @@ class GroupFormationView(UserControl):
             height=50,
             on_click=self.form_groups,
         )
-
+        self.copy_button = IconButton(
+            icon=icons.COPY_ALL_ROUNDED,
+            icon_size=20,
+            visible=True,
+            tooltip="Copy to clipboard",
+            on_click=self.copy_to_clipboard,
+        )
         self.output_label = Text("Generated Groups:", weight=ft.FontWeight.BOLD)
         self.output_text = Text(
             "",
             style=ft.TextThemeStyle.HEADLINE_SMALL,
             weight=ft.FontWeight.BOLD,
         )
+        self.output_area = self._build_output_area()
 
     def build(self) -> Row:
         return Row(
@@ -113,7 +135,7 @@ class GroupFormationView(UserControl):
                 self._build_divider(),
                 self._build_filter_area(),
                 self._build_divider(),
-                self._build_output_area(),
+                self.output_area,
             ],
             spacing=0,
             expand=True,
@@ -147,12 +169,18 @@ class GroupFormationView(UserControl):
             content=Column(
                 [
                     Text("Group Formation Settings:", weight=ft.FontWeight.BOLD),
-                    self.group_size_input,
-                    self.group_num_input,
+                    Row(
+                        controls= [
+                            self.group_size_input,
+                            self.group_num_input,
+                        ],
+                        spacing= 10
+                    ),
+
                     Divider(height=1, color=ft.colors.GREY_400),
                     Text("Gender filler:", weight=ft.FontWeight.BOLD),
                     RadioGroup(
-                        value=self.gender_filter,
+                        value=self.selected_gender_filter,
                         on_change=self.update_selected_gender,
                         content=Column(
                             [
@@ -178,6 +206,7 @@ class GroupFormationView(UserControl):
                         ),
                 ),
                     self.generate_button,
+                    self.clear_result_button,
                 ],
                 spacing=20,
                 alignment=ft.MainAxisAlignment.START,
@@ -186,21 +215,56 @@ class GroupFormationView(UserControl):
             padding=20,
             alignment=ft.alignment.top_left,
         )
-    def update_selected_gender(self, e: ControlEvent) -> None:
-        """Updates the selected gender filter and clears unused input fields.
+    def clear_result(self, e: ControlEvent) -> None:
+        """Clear the generated result and disable the clear button."""
+        self.output_text.value = ""
+        self.output_text.update()
+        self.output_label.value = "Generated name:"
+        self.clear_result_button.disabled = True
+        self.clear_result_button.update()
+        self.output_area.update()
+        self.clear_result_button.update()
 
-        Args:
-            e (ControlEvent): The event triggered by the RadioGroup.
-        """
+    
+    def copy_to_clipboard(self, e: ControlEvent) -> None:
+        """Copy generated names to clipboard."""
+        if self.output_text.value:
+            self.page.set_clipboard(self.output_text.value)
+            self.page.show_snack_bar(ft.SnackBar(content=Text("Copied to clipboard!")))
+    
+    def update_selected_gender(self, e: ControlEvent) -> None:
         self.selected_gender_filter = e.control.value
-        # Clear male input if not selected
-        if self.selected_gender_filter != "male":
+
+        if self.selected_gender_filter == "none":
+        # Disable both male and female inputs when "None" is selected
             self.male_count_input.value = ""
+            self.male_count_input.disabled = True
             self.male_count_input.update()
-        # Clear female input if not selected
-        if self.selected_gender_filter != "female":
+
             self.female_count_input.value = ""
+            self.female_count_input.disabled = True
             self.female_count_input.update()
+        
+        elif self.selected_gender_filter == "male":
+            # Enable male input and disable female input
+            self.male_count_input.disabled = False
+            self.female_count_input.value = ""
+            self.female_count_input.disabled = True
+            self.gender_input.visible = True
+            self.male_count_input.update()
+            self.female_count_input.update()
+            self.gender_input.update()
+
+        elif self.selected_gender_filter == "female":
+            # Enable female input and disable male input
+            self.female_count_input.disabled = False
+            self.male_count_input.value = ""
+            self.male_count_input.disabled = True
+            self.gender_input.visible = True
+            self.male_count_input.update()
+            self.female_count_input.update()
+            self.gender_input.update()
+
         self.show_gender_column = self.selected_gender_filter != 'none'
         if self.show_gender_column:
             self.gender_column.visible = True
@@ -212,7 +276,13 @@ class GroupFormationView(UserControl):
         return Container(
             content=Column(
                 [
-                    self.output_label,
+                    Row (
+                        controls= [
+                            self.output_label,
+                            self.copy_button,
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    ),
                     self.output_text,
                 ],
                 spacing=20,
@@ -296,6 +366,8 @@ class GroupFormationView(UserControl):
                 output.append("")  # Empty line between groups
 
             self.output_text.value = "\n".join(output).strip()
+            self.clear_result_button.disabled = False
+            self.clear_result_button.update()
             self.output_text.update()
             self.output_area.update()
             
