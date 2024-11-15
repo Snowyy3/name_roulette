@@ -16,13 +16,14 @@ from flet import (
     IconButton,
     icons,
 )
-
+from model.group_former import GroupFormer
 
 class GroupFormationView(UserControl):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
         self.show_gender_column = False
+        self.groupformer = GroupFormer()
 
         # Initialize input fields
         self.names_input = TextField(
@@ -187,7 +188,7 @@ class GroupFormationView(UserControl):
                                 Radio(value="none", label="None"),
                                 Row(
                                     [
-                                        Radio(value="male", label="Fix "),
+                                        Radio(value="male"),
                                         self.male_count_input,
                                         Text(" males"),
                                     ],
@@ -195,7 +196,7 @@ class GroupFormationView(UserControl):
                                 ),
                                 Row(
                                     [
-                                        Radio(value="female", label="Fix "),
+                                        Radio(value="female"),
                                         self.female_count_input,
                                         Text(" females"),
                                     ],
@@ -348,30 +349,47 @@ class GroupFormationView(UserControl):
 
 
     def form_groups(self, e):
-        names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
+        
         try:
-            group_size = int(self.group_size_input.value or 0)
-            group_num = int(self.group_num_input.value or 0)
+                group_size = int(self.group_size_input.value or 0)
+                group_num = int(self.group_num_input.value or 0)
 
-            if not names:
+        except ValueError:
                 return
+        
+        if self.selected_gender_filter == 'none':  
+            names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]  
+            if not names:
+                    return
 
             generated_groups = self.controller.form_groups(names, group_size, group_num)
 
-            # Format output
-            output = []
-            for i, group in enumerate(generated_groups, 1):
-                output.append(f"Group {i}:")
-                output.extend(f"  • {name}" for name in group)
-                output.append("")  # Empty line between groups
+        else: 
+            # return list[tuple[name, gender]
+            names = self.groupformer.get_cleaned_names(self.names_input.value,self.gender_input.value)
+            try:
+                male_count = int(self.male_count_input.value) if self.selected_gender_filter == "male" else 0
+            except ValueError:
+                male_count = 0
+
+            try:
+                female_count = int(self.female_count_input.value) if self.selected_gender_filter == "female" else 0
+            except ValueError:
+                female_count = 0
+
+            #form group
+            generated_groups = self.groupformer.generate_names_with_gender(names, male_count= male_count, female_count= female_count, group_size= group_size, num_groups= group_num)
+
+
+        # Format output
+        output = []
+        for i, group in enumerate(generated_groups, 1):
+            output.append(f"Group {i}:")
+            output.extend(f"  • {name}" for name in group)
+            output.append("")  # Empty line between groups
 
             self.output_text.value = "\n".join(output).strip()
             self.clear_result_button.disabled = False
             self.clear_result_button.update()
             self.output_text.update()
             self.output_area.update()
-            
-
-
-        except ValueError:
-            return
