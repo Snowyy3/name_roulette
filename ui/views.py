@@ -7,3 +7,5 @@ class View(Enum):
     SETTINGS = auto()
     MANAGE_LISTS = auto()
     USER_ACCOUNTS = auto()
+    LOGIN = auto()
+    SIGNUP = auto()

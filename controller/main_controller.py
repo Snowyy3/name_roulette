@@ -1,5 +1,6 @@
 from model.name_generator import NameGenerator
 from controller.group_former_controller import GroupFormationController
+from controller.user_authentication_controller import UserAuthenticationController
 
 
 class MainController:
@@ -7,6 +8,7 @@ class MainController:
         self.page = page
         self.name_generator = NameGenerator()
         self.group_formation = GroupFormationController()
+        self.auth = UserAuthenticationController(page)  # Initialize UserAuthenticationController
 
     def generate_name(self, names: list[str], num_names: int = 1) -> list[str]:
         return self.name_generator.get_random_names(names, num_names)

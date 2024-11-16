@@ -1,0 +1,42 @@
+import flet as ft
+from model.user_authentication import UserAuthentication
+
+
+class UserAuthenticationController:
+    def __init__(self, page):
+        self.page = page
+        self.auth = UserAuthentication()
+        self.current_user = None
+
+    def handle_login(self, username: str, password: str) -> bool:
+        """Handle login attempt"""
+        if username is None and password is None:
+            # Guest login
+            self.current_user = {"display_name": "Guest", "username": None}
+            return True
+
+        if self.auth.verify_password(username, password):
+            display_name = self.auth.get_display_name(username)
+            self.current_user = {"display_name": display_name, "username": username}
+            return True
+        return False
+
+    def handle_signup(self, username: str, display_name: str, password: str) -> bool:
+        """Handle signup attempt"""
+        try:
+            self.auth.add_user(username, display_name, password)
+            return True
+        except ValueError as e:
+            return False
+
+    def handle_logout(self):
+        """Handle logout"""
+        self.current_user = None
+
+    def is_authenticated(self) -> bool:
+        """Check if user is authenticated"""
+        return self.current_user is not None
+
+    def get_current_user(self) -> dict:
+        """Get current user info"""
+        return self.current_user or {"display_name": "Guest", "username": None}

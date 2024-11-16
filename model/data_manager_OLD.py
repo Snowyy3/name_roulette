@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from .user_authentication import UserAuthentication
 
 
 class DataManager:
@@ -9,7 +10,10 @@ class DataManager:
         Initialize the DataManager with a file path for storing data.
         """
         self.file_path = file_path
-        self.data = self.load_data()  # Ensure self.data is always initialized
+        self.user_auth = UserAuthentication()
+
+        # Ensure self.data is always initialized
+        self.data = self.load_data()
 
     def load_data(self):
         """
@@ -110,6 +114,28 @@ class DataManager:
             # Validate GPA (as float between 0 and 4.0)
             if "gpa" in record and not (0 <= float(record["gpa"]) <= 4.0):
                 raise ValueError("GPA must be between 0 and 4.0.")
+
+    # Example usage of UserAuthentication
+    def register_user(self, username, display_name, password):
+        """
+        Register a new user.
+        """
+        try:
+            self.user_auth.add_user(username, display_name, password)
+            print("User registered successfully.")
+        except ValueError as e:
+            print(e)
+
+    def authenticate_user(self, username, password):
+        """
+        Authenticate a user.
+        """
+        if self.user_auth.verify_password(username, password):
+            print("Authentication successful.")
+            return True
+        else:
+            print("Authentication failed.")
+            return False
 
 
 if __name__ == "__main__":
