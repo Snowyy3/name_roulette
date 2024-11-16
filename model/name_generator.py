@@ -17,6 +17,12 @@ class NameGenerator:
         Returns:
             list[tuple[str, str]]: List of tuples where each tuple is (name, gender).
         """
+        # Map Vietnamese gender terms to English
+        gender_map = {"nam": "male",
+                      "nữ": "female",
+                      "male": "male",
+                      "female": "female"}
+
         names = names_text.strip().splitlines()
         genders = genders_text.strip().splitlines()
 
@@ -24,9 +30,9 @@ class NameGenerator:
         cleaned_names = []
         for name, gender in zip(names, genders):
             name = name.strip()
-            gender = gender.strip().lower()
-            if name and gender in {"male", "female"}:
-                cleaned_names.append((name, gender))
+            normalized_gender = gender_map.get(gender.strip().lower(), None)  # Normalize gender
+            if name and normalized_gender:
+                cleaned_names.append((name, normalized_gender))
 
         return cleaned_names
 
