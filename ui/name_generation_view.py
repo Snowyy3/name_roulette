@@ -16,43 +16,27 @@ from flet import (
     icons,
 )
 from model.name_generator import NameGenerator
-import asyncio  # Add this import at the top with other imports
+import asyncio
 
 
 class NameGenerationView(UserControl):
-    """A view component for the name generation interface.
-
-    This class provides the UI for entering names, selecting generation options,
-    and displaying generated names.
-
-    Attributes:
-        controller: The controller managing this view's business logic.
-        name_generator (NameGenerator): Handler for name generation operations.
-        num_names_input (TextField): Input field for custom number selection.
-        selected_num (str): Currently selected number of names to generate.
-        randomize_button (ElevatedButton): Button to trigger name generation.
-        names_input (TextField): Input field for the list of names.
-        output_label (Text): Label for the output area.
-        output_text (Text): Display area for generated names.
-    """
+    """A view component for the name generation interface."""
 
     def __init__(self, controller) -> None:
-        """Initialize the name generation view.
-
-        Args:
-            controller: The controller managing this view's business logic.
-        """
+        """Initialize the name generation view."""
         super().__init__()
         self.controller = controller
         self.name_generator = NameGenerator()
+        
         self.num_names_input = TextField(
             value="",
             width=40,
             height=35,
-            text_align="center",  # Centers text horizontally
-            content_padding=8,  # Adds padding to center text vertically
-            on_change=self.validate_input,
+            text_align="center",
+            content_padding=8,
+            disabled=True,  # Initially disabled for the custom option
         )
+
         self.selected_num = "1"
         self.randomize_button = ElevatedButton(
             content=Row(
@@ -82,7 +66,7 @@ class NameGenerationView(UserControl):
             disabled=True,
             height=50,
         )
-        self.names_input = TextField(  # Create reference to input field
+        self.names_input = TextField(
             label="Name",
             multiline=True,
             min_lines=8,
@@ -91,7 +75,6 @@ class NameGenerationView(UserControl):
             on_change=self.validate_input,
             border=ft.InputBorder.OUTLINE,
         )
-        # Highlighted: Initialize new gender input field, initially hidden
         self.gender_input = TextField(
             label="Gender",
             multiline=True,
@@ -100,10 +83,10 @@ class NameGenerationView(UserControl):
             expand=1,
             on_change=self.validate_input,
             border=ft.InputBorder.OUTLINE,
-            visible=False,  # Initially hidden
+            visible=False,
         )
-        self.output_label = Text("Generated name:", weight=ft.FontWeight.BOLD)  # Store reference to label
-        self.output_text = Text(  # Store reference to output text
+        self.output_label = Text("Generated name:", weight=ft.FontWeight.BOLD)
+        self.output_text = Text(
             "",
             style=ft.TextThemeStyle.HEADLINE_MEDIUM,
             weight=ft.FontWeight.BOLD,
@@ -115,6 +98,7 @@ class NameGenerationView(UserControl):
             height=35,
             text_align="center",
             content_padding=8,
+            disabled=True,  # Initially disabled
         )
         self.female_count_input = TextField(
             value="",
@@ -122,11 +106,12 @@ class NameGenerationView(UserControl):
             height=35,
             text_align="center",
             content_padding=8,
+            disabled=True,  # Initially disabled
         )
         self.copy_button = IconButton(
             icon=icons.COPY_ALL_ROUNDED,
             icon_size=20,
-            visible=False,  # Initially hidden
+            visible=False,
             tooltip="Copy to clipboard",
             on_click=self.copy_to_clipboard,
         )
@@ -138,7 +123,7 @@ class NameGenerationView(UserControl):
         )
         self.input_area = self._build_input_area()
         self.output_area = self._build_output_area()
-
+        
     def build(self) -> Row:
         """Builds the main layout of the Name Generation view."""
         return Row(
@@ -151,16 +136,16 @@ class NameGenerationView(UserControl):
             ],
             spacing=0,
             expand=True,
-            height=self.page.height if self.page else None,  # Add height constraint
-            alignment=ft.MainAxisAlignment.START,  # Align horizontally
-            vertical_alignment=ft.CrossAxisAlignment.START,  # Align vertically to top
+            height=self.page.height if self.page else None,
+            alignment=ft.MainAxisAlignment.START,
+            vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
     def _build_input_area(self) -> Container:
-        """Builds the input area for entering names.
+        """Builds the input area for entering names and genders.
 
         Returns:
-            Container: A container holding the name input TextField.
+            Container: A container holding the input fields and labels.
         """
         name_gender_row = Row(
             controls=[self.names_input, self.gender_input],  # Include gender_input in the row
@@ -168,13 +153,14 @@ class NameGenerationView(UserControl):
             alignment=ft.MainAxisAlignment.START,
             expand=True
         )
-       
+
         return Container(
             content=Column(
                 [
                     Row(
                         [
-                            self.save_list_button,
+                            Text("Names:", weight=ft.FontWeight.BOLD),  # Add "Input:" label
+                            self.save_list_button,  # Position Save as list button next to Input label
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
@@ -193,19 +179,11 @@ class NameGenerationView(UserControl):
         )
 
     def _build_divider(self) -> VerticalDivider:
-        """Builds a vertical divider between input and output areas.
-
-        Returns:
-            VerticalDivider: A simple vertical divider.
-        """
+        """Builds a vertical divider between input and output areas."""
         return VerticalDivider(width=7, color=ft.colors.GREY, thickness=1)
 
     def _build_filter_area(self) -> Container:
-        """Builds the filter area with number selection and randomize button.
-
-        Returns:
-            Container: A container holding the filter controls.
-        """
+        """Builds the filter area with number selection for males and females."""
         return Container(
             content=Column(
                 [
@@ -223,13 +201,13 @@ class NameGenerationView(UserControl):
                                         Radio(value="custom", label="Custom: "),
                                         self.num_names_input,
                                     ],
-                                    spacing=8,  # Tight spacing between Custom label and input
+                                    spacing=8,
                                 ),
                             ],
-                            spacing=32,  # Consistent spacing between radio options
+                            spacing=32,
                         ),
                     ),
-                    Divider(height=1, color=ft.colors.GREY_400),  # Add thin gray divider
+                    Divider(height=1, color=ft.colors.GREY_400),
                     Text("Gender filter:", weight=ft.FontWeight.BOLD),
                     RadioGroup(
                         value=self.selected_gender_filter,
@@ -239,41 +217,37 @@ class NameGenerationView(UserControl):
                                 Radio(value="none", label="None"),
                                 Row(
                                     [
-                                        Radio(value="male", label="At least "),
+                                        Radio(value="male", label=""),
                                         self.male_count_input,
                                         Text(" males"),
                                     ],
-                                    spacing=8,  # Tight spacing between elements
+                                    spacing=8,
                                 ),
                                 Row(
                                     [
-                                        Radio(value="female", label="At least "),
+                                        Radio(value="female", label=""),
                                         self.female_count_input,
                                         Text(" females"),
                                     ],
-                                    spacing=8,  # Tight spacing between elements
+                                    spacing=8,
                                 ),
                             ],
-                            spacing=8,  # Spacing between radio options
+                            spacing=8,
                         ),
                     ),
                     self.randomize_button,
                     self.clear_result_button,
                 ],
-                spacing=20,  # Spacing between filter elements
+                spacing=20,
                 alignment=ft.MainAxisAlignment.START,
             ),
             expand=True,
-            padding=20,  # Padding around the filter area
-            alignment=ft.alignment.top_left,  # Align container content to top
+            padding=20,
+            alignment=ft.alignment.top_left,
         )
 
     def _build_output_area(self) -> Container:
-        """Builds the output area to display the generated names.
-
-        Returns:
-            Container: A container holding the generated names.
-        """
+        """Builds the output area to display the generated names."""
         return Container(
             content=Column(
                 [
@@ -286,39 +260,82 @@ class NameGenerationView(UserControl):
                     ),
                     self.output_text,
                 ],
-                spacing=20,  # Spacing between label and output text
+                spacing=20,
                 expand=True,
                 alignment=ft.MainAxisAlignment.START,
             ),
             expand=True,
-            padding=20,  # Padding around the output area
-            alignment=ft.alignment.top_left,  # Align container content to top
+            padding=20,
+            alignment=ft.alignment.top_left,
         )
 
     def update_selected_num(self, e: ControlEvent) -> None:
-        """Updates the selected number of names to pick and validates input.
-
-        Args:
-            e (ControlEvent): The event triggered by the RadioGroup.
-        """
+        """Updates the selected number of names to pick and enables/disables custom input box."""
         self.selected_num = e.control.value
-        if self.selected_num != "custom":
-            self.num_names_input.value = ""
-            self.num_names_input.update()
+
+        # Enable custom input only when "custom" is selected
+        if self.selected_num == "custom":
+            self.num_names_input.disabled = False
+        else:
+            self.num_names_input.disabled = True
+            self.num_names_input.value = ""  # Clear the custom input if it's disabled
+
+        # Update the UI
+        self.num_names_input.update()
         self.validate_input()
+
 
     def validate_input(self, e: ControlEvent = None) -> None:
         """UI event handler for input validation."""
         names = self.name_generator.get_cleaned_names(self.names_input.value or "")
-        is_valid = self.name_generator.validate_input(names, self.selected_num, self.num_names_input.value)
+
+        # Check if gender filter is set to "None" and validate accordingly
+        if self.selected_gender_filter == "none":
+            is_valid = self.name_generator.validate_input(names, self.selected_num, self.num_names_input.value)
+        else:
+            is_valid = self.name_generator.validate_input(
+                names, self.selected_num, self.num_names_input.value,
+                male_count=self.male_count_input.value or "0",
+                female_count=self.female_count_input.value or "0"
+            )
+
         self.randomize_button.disabled = not is_valid
         self.randomize_button.update()
 
     def generate_random_name(self, e: ControlEvent) -> None:
-        """UI event handler for name generation."""
-        generated_names = self.name_generator.process_name_generation(
-            self.names_input.value or "", self.selected_num, self.num_names_input.value
-        )
+        """UI event handler for name generation, ignoring gender if 'None' is selected."""
+        total_count = self.name_generator.get_num_names(self.selected_num, self.num_names_input.value)
+
+        if self.selected_gender_filter == "none":
+            generated_names = self.name_generator.generate_random_names_without_gender(
+                names_text=self.names_input.value or "",
+                total_count=total_count
+            )
+        else:
+            try:
+                male_count = int(self.male_count_input.value) if self.selected_gender_filter == "male" else 0
+            except ValueError:
+                male_count = 0
+
+            try:
+                female_count = int(self.female_count_input.value) if self.selected_gender_filter == "female" else 0
+            except ValueError:
+                female_count = 0
+
+            generated_names = self.name_generator.process_name_generation(
+                names_text=self.names_input.value or "",
+                genders_text=self.gender_input.value or "",
+                selected_num=self.selected_num,
+                custom_value=self.num_names_input.value,
+                male_count=male_count,
+                female_count=female_count
+            )
+
+        if not generated_names:
+            self.output_text.value = "Unable to generate names. Please make sure there are enough names to meet your selected counts."
+            self.output_area.update()
+            return
+
         self._update_output_area(generated_names)
 
     def clear_result(self, e: ControlEvent) -> None:
@@ -326,62 +343,67 @@ class NameGenerationView(UserControl):
         self.output_text.value = ""
         self.output_label.value = "Generated name:"
         self.clear_result_button.disabled = True
-        self.copy_button.visible = False  # Hide copy button when clearing
+        self.copy_button.visible = False
         self.output_area.update()
         self.clear_result_button.update()
 
     def _update_output_area(self, generated_names: list[str]) -> None:
-        """Update the output area with generated names.
-
-        Args:
-            generated_names (list[str]): The list of generated names to display.
-        """
+        """Update the output area with generated names."""
         if self.output_area and self.output_area.content:
-            # Update label based on number of names
             self.output_label.value = "Generated names:" if len(generated_names) > 1 else "Generated name:"
             self.output_text.value = "\n".join(generated_names)
             self.clear_result_button.disabled = False
-            self.copy_button.visible = bool(generated_names)  # Show copy button only when there are results
+            self.copy_button.visible = bool(generated_names)
             self.output_area.update()
             self.clear_result_button.update()
 
     def update_selected_gender(self, e: ControlEvent) -> None:
-        """Updates the selected gender filter and clears unused input fields.
-
-        Args:
-            e (ControlEvent): The event triggered by the RadioGroup.
-        """
+        """Updates the selected gender filter and enables/disables inputs based on selection."""
         self.selected_gender_filter = e.control.value
-        # Clear male input if not selected
-        if self.selected_gender_filter != "male":
+        if self.selected_gender_filter == "none":
+            # Disable both male and female inputs when "None" is selected
             self.male_count_input.value = ""
+            self.male_count_input.disabled = True
             self.male_count_input.update()
-        # Clear female input if not selected
-        if self.selected_gender_filter != "female":
+
             self.female_count_input.value = ""
+            self.female_count_input.disabled = True
             self.female_count_input.update()
-        # Highlighted: Show/hide gender input field based on selected gender filter
-        if self.selected_gender_filter in ["male", "female"]:
-            self.gender_input.visible = True  # Show gender input
-        else:
-            self.gender_input.visible = False  # Hide gender input
-        # Update UI to reflect changes
-        self.gender_input.update()
-        self.names_input.update()
+
+            # Hide gender input box as it's not required
+            self.gender_input.visible = False
+            self.gender_input.update()
+
+        elif self.selected_gender_filter == "male":
+            # Enable male input and disable female input
+            self.male_count_input.disabled = False
+            self.female_count_input.value = ""
+            self.female_count_input.disabled = True
+            self.gender_input.visible = True
+            self.male_count_input.update()
+            self.female_count_input.update()
+            self.gender_input.update()
+
+        elif self.selected_gender_filter == "female":
+            # Enable female input and disable male input
+            self.female_count_input.disabled = False
+            self.male_count_input.value = ""
+            self.male_count_input.disabled = True
+            self.gender_input.visible = True
+            self.male_count_input.update()
+            self.female_count_input.update()
+            self.gender_input.update()
 
     def copy_to_clipboard(self, e: ControlEvent) -> None:
         """Copy generated names to clipboard."""
         if self.output_text.value:
             self.page.set_clipboard(self.output_text.value)
-            # Optionally show a snackbar to confirm copy
             self.page.show_snack_bar(ft.SnackBar(content=Text("Copied to clipboard!")))
 
     async def handle_save_list_click(self, e: ControlEvent) -> None:
         """Temporarily changes the icon to show save confirmation."""
         self.save_list_button.icon = icons.BOOKMARK_ADDED
         self.save_list_button.update()
-
-        await asyncio.sleep(3)  # Use asyncio.sleep instead of page.sleep
-
+        await asyncio.sleep(3)
         self.save_list_button.icon = icons.BOOKMARK_ADD_OUTLINED
         self.save_list_button.update()

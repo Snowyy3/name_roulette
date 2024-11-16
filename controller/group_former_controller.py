@@ -60,4 +60,3 @@ class GroupFormationController:
             return []
 
 
-# -> Phần output có vẫn đề, chưa chia đc theo group size + ch (chưa cần quan tâm đên gender), ai làm thì fixx lỗi này nhé
