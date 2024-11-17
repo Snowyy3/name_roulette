@@ -14,6 +14,7 @@ from flet import (
     Divider,
     IconButton,
     icons,
+    Audio,
 )
 from model.name_generator import NameGenerator
 import asyncio
@@ -47,7 +48,7 @@ class NameGenerationView(UserControl):
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=8,
             ),
-            on_click=self.generate_random_name,
+            on_click=self.handle_randomize_click,
             width=200,
             disabled=False,
             height=50,
@@ -61,7 +62,7 @@ class NameGenerationView(UserControl):
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=8,
             ),
-            on_click=self.clear_result,
+            on_click=self.handle_clear_click,
             width=200,
             disabled=True,
             height=50,
@@ -123,7 +124,21 @@ class NameGenerationView(UserControl):
         )
         self.input_area = self._build_input_area()
         self.output_area = self._build_output_area()
-        
+
+        self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
+        self.clear_sound = Audio(src="clear.mp3", autoplay=False)  # Replace "clear.mp3" with your sound file
+
+
+    def handle_randomize_click(self, e: ControlEvent) -> None:
+        """Handles the randomize button click and plays a sound effect."""
+        self.randomize_sound.play()  # Play the sound effect
+        self.generate_random_name(e)  # Call the original logic
+
+    def handle_clear_click(self, e: ControlEvent) -> None:
+        """Handles the Clear Result button click and plays a sound effect."""
+        self.clear_sound.play()  # Play the sound effect
+        self.clear_result(e)  # Call the original clear result logic
+
     def build(self) -> Row:
         """Builds the main layout of the Name Generation view."""
         return Row(
@@ -133,6 +148,8 @@ class NameGenerationView(UserControl):
                 self._build_filter_area(),
                 self._build_divider(),
                 self.output_area,
+                self.randomize_sound,
+                self.clear_sound,
             ],
             spacing=0,
             expand=True,
