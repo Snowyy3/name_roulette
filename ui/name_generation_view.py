@@ -28,6 +28,11 @@ class NameGenerationView(UserControl):
         super().__init__()
         self.controller = controller
         self.name_generator = NameGenerator()
+
+        self.left_column_width = 300  # Initial size for the left column
+        self.middle_column_min_width = 320  # Initial size for the middle column (set as the minimum)
+        self.right_column_width = 350  # Initial size for the right column
+
         
         self.num_names_input = TextField(
             value="",
@@ -36,6 +41,7 @@ class NameGenerationView(UserControl):
             text_align="center",
             content_padding=8,
             disabled=True,  # Initially disabled for the custom option
+            on_change=self.validate_input
         )
 
         self.selected_num = "1"
@@ -126,7 +132,59 @@ class NameGenerationView(UserControl):
         self.output_area = self._build_output_area()
 
         self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
-        self.clear_sound = Audio(src="clear.mp3", autoplay=False)  # Replace "clear.mp3" with your sound file
+        self.clear_sound = Audio(src="clear.mp3", autoplay=False)
+
+        self.filter_area = self._build_filter_area()
+
+    def move_left_divider(self, e: ft.DragUpdateEvent):
+        """Handle dragging for the left divider."""
+        total_width = self.page.width or 960  # Default page width
+        middle_width = total_width - self.left_column_width - self.right_column_width - 14  # Gap between dividers
+
+        # Ensure the left divider respects the minimum width of the middle column
+        if (
+            e.delta_x > 0 and  # Dragging right
+            self.left_column_width < 400 and
+            middle_width - e.delta_x >= self.middle_column_min_width
+        ) or (
+            e.delta_x < 0 and  # Dragging left
+            self.left_column_width > 200
+        ):
+            self.left_column_width += e.delta_x
+            self.input_area.width = self.left_column_width
+            self.input_area.update()
+
+            # Dynamically adjust middle column width
+            middle_width -= e.delta_x
+            self.filter_area.width = middle_width
+            self.filter_area.update()
+
+
+    def move_right_divider(self, e: ft.DragUpdateEvent):
+        """Handle dragging for the right divider."""
+        total_width = self.page.width or 960  # Default page width
+        middle_width = total_width - self.left_column_width - self.right_column_width - 14  # Gap between dividers
+
+        # Ensure the right divider respects the minimum width of the middle column
+        if (
+            e.delta_x < 0 and  # Dragging left
+            self.right_column_width < 400 and
+            middle_width + e.delta_x >= self.middle_column_min_width
+        ) or (
+            e.delta_x > 0 and  # Dragging right
+            self.right_column_width > 200
+        ):
+            self.right_column_width -= e.delta_x
+            self.output_area.width = self.right_column_width
+            self.output_area.update()
+
+            # Dynamically adjust middle column width
+            middle_width += e.delta_x
+            self.filter_area.width = middle_width
+            self.filter_area.update()
+
+
+
 
 
     def handle_randomize_click(self, e: ControlEvent) -> None:
@@ -143,11 +201,21 @@ class NameGenerationView(UserControl):
         """Builds the main layout of the Name Generation view."""
         return Row(
             controls=[
-                self.input_area,
-                self._build_divider(),
-                self._build_filter_area(),
-                self._build_divider(),
-                self.output_area,
+                self.input_area,  # Left column
+                ft.GestureDetector(
+                    content=ft.VerticalDivider(width=7, color=ft.colors.GREY, thickness=1),
+                    drag_interval=10,
+                    on_pan_update=self.move_left_divider,
+                    on_hover=self.show_draggable_cursor,
+                ),
+                self.filter_area,  # Middle column
+                ft.GestureDetector(
+                    content=ft.VerticalDivider(width=7, color=ft.colors.GREY, thickness=1),
+                    drag_interval=10,
+                    on_pan_update=self.move_right_divider,
+                    on_hover=self.show_draggable_cursor,
+                ),
+                self.output_area,  # Right column
                 self.randomize_sound,
                 self.clear_sound,
             ],
@@ -157,6 +225,7 @@ class NameGenerationView(UserControl):
             alignment=ft.MainAxisAlignment.START,
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
+
 
     def _build_input_area(self) -> Container:
         """Builds the input area for entering names and genders.
@@ -190,7 +259,7 @@ class NameGenerationView(UserControl):
                 expand=True,
                 scroll=ft.ScrollMode.AUTO,  
             ),
-            expand=True,
+            width=self.left_column_width,
             padding=20,  
             alignment=ft.alignment.top_left,  
         )
@@ -216,7 +285,7 @@ class NameGenerationView(UserControl):
                                 Row(
                                     [
                                         Radio(value="custom", label="Custom: "),
-                                        self.num_names_input,
+                                        self.num_names_input,  # Add the TextField here
                                     ],
                                     spacing=8,
                                 ),
@@ -224,6 +293,7 @@ class NameGenerationView(UserControl):
                             spacing=32,
                         ),
                     ),
+
                     Divider(height=1, color=ft.colors.GREY_400),
                     Text("Gender filter:", weight=ft.FontWeight.BOLD),
                     RadioGroup(
@@ -281,7 +351,7 @@ class NameGenerationView(UserControl):
                 expand=True,
                 alignment=ft.MainAxisAlignment.START,
             ),
-            expand=True,
+            width=self.right_column_width,
             padding=20,
             alignment=ft.alignment.top_left,
         )
@@ -424,3 +494,12 @@ class NameGenerationView(UserControl):
         await asyncio.sleep(3)
         self.save_list_button.icon = icons.BOOKMARK_ADD_OUTLINED
         self.save_list_button.update()
+
+
+
+    def show_draggable_cursor(self, e: ft.HoverEvent) -> None:
+        """Show draggable cursor when hovering over the divider."""
+        e.control.mouse_cursor = ft.MouseCursor.RESIZE_LEFT_RIGHT
+        e.control.update()
+
+
