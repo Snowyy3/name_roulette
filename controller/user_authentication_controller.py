@@ -1,11 +1,10 @@
 import flet as ft
-from model.user_authentication import UserAuthentication
 
 
 class UserAuthenticationController:
-    def __init__(self, page):
+    def __init__(self, page, auth):
         self.page = page
-        self.auth = UserAuthentication()
+        self.auth = auth  # Use the shared instance
         self.current_user = None
 
     def handle_login(self, username: str, password: str) -> bool:

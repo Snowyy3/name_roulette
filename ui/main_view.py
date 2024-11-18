@@ -4,8 +4,8 @@ from ui.name_generation_view import NameGenerationView
 from ui.group_former_view import GroupFormationView
 from ui.left_sidebar import LeftSidebar
 from ui.views import View
-from .login_view import LoginView
-from .signup_view import SignUpView
+from ui.login_view import LoginView
+from ui.signup_view import SignUpView
 
 
 class MainView(UserControl):
@@ -28,11 +28,17 @@ class MainView(UserControl):
         self.previous_view = None  # Track previous view
 
         self.login_view = LoginView(
-            page=self.page, on_login=self.handle_login, on_switch_to_signup=lambda: self.handle_view_change(View.SIGNUP)
+            page=self.page,
+            on_login=self.handle_login,
+            on_switch_to_signup=lambda: self.handle_view_change(View.SIGNUP),
+            auth=controller.user_auth,  # Pass the shared auth instance
         )
 
         self.signup_view = SignUpView(
-            page=self.page, on_signup=self.handle_signup, on_switch_to_login=lambda: self.handle_view_change(View.LOGIN)
+            page=self.page,
+            on_signup=self.handle_signup,
+            on_switch_to_login=lambda: self.handle_view_change(View.LOGIN),
+            auth=controller.user_auth,  # Pass the shared auth instance
         )
 
         self.manage_lists_btn = ft.IconButton(
@@ -54,7 +60,12 @@ class MainView(UserControl):
                 border_radius=20,
                 bgcolor=ft.colors.SURFACE_VARIANT,
             ),
-            items=[ft.PopupMenuItem(text="Log In", on_click=lambda _: self.handle_view_change(View.LOGIN))],
+            items=[
+                ft.PopupMenuItem(
+                    text="Log In",
+                    on_click=lambda _: self.handle_view_change(View.LOGIN),
+                )
+            ],
         )
 
         # Update AppBar with user account button
@@ -66,7 +77,7 @@ class MainView(UserControl):
                     content=Row(
                         controls=[
                             self.manage_lists_btn,
-                            self.user_account_button,  # Replace user_account_button with user_account_button
+                            self.user_account_button,
                         ],
                         spacing=10,
                     ),
@@ -100,12 +111,14 @@ class MainView(UserControl):
         self.content_area = Container(
             content=main_content,
             expand=True,
-            alignment=ft.alignment.top_left,
+            alignment=ft.alignment.center,
+            # alignment=ft.alignment.top_left,
         )
 
         return Row(
             controls=[self.left_sidebar, self.content_area],
             expand=True,
+            alignment=ft.MainAxisAlignment.CENTER,
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
 

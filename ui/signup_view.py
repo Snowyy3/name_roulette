@@ -3,11 +3,12 @@ import re
 
 
 class SignUpView(ft.UserControl):
-    def __init__(self, page: ft.Page, on_signup=None, on_switch_to_login=None):
+    def __init__(self, page: ft.Page, on_signup=None, on_switch_to_login=None, auth=None):
         super().__init__()
         self.page = page
         self.on_signup = on_signup
         self.on_switch_to_login = on_switch_to_login
+        self.auth = auth  # Use the shared instance
 
     def build(self):
         self.display_name_field = ft.TextField(
@@ -39,6 +40,21 @@ class SignUpView(ft.UserControl):
             height=56,
         )
 
+        self.username_feedback = ft.Text(
+            size=14,
+            color=ft.colors.RED_500,
+            visible=False,
+        )
+
+        self.password_feedback = ft.Text(
+            size=14,
+            color=ft.colors.RED_500,
+            visible=False,
+        )
+
+        self.username_field.on_change = self.validate_username
+        self.password_field.on_change = self.validate_password
+
         self.error_text = ft.Text(
             color="#ef4444",  # Red color for errors
             size=14,
@@ -59,8 +75,10 @@ class SignUpView(ft.UserControl):
                     self.display_name_field,
                     ft.Container(height=16),
                     self.username_field,
+                    self.username_feedback,
                     ft.Container(height=16),
                     self.password_field,
+                    self.password_feedback,
                     ft.Container(height=16),
                     self.error_text,
                     ft.Container(height=16),
@@ -160,3 +178,36 @@ class SignUpView(ft.UserControl):
     def switch_to_login(self, e):
         if self.on_switch_to_login:
             self.on_switch_to_login()
+
+    def validate_username(self, e):
+        username = self.username_field.value
+        if len(username) < 3:
+            self.username_feedback.value = "Username must be at least 3 characters long"
+            self.username_feedback.visible = True
+        elif not re.match(r"^[a-zA-Z0-9_]+$", username):
+            self.username_feedback.value = "Username can only contain letters, numbers, and underscores"
+            self.username_feedback.visible = True
+        elif username in self.auth.users["users"]:
+            self.username_feedback.value = "Username already exists"
+            self.username_feedback.visible = True
+        else:
+            self.username_feedback.visible = False
+        self.update()
+
+    def validate_password(self, e):
+        password = self.password_field.value
+        if len(password) < 6:
+            self.password_feedback.value = "Password must be at least 6 characters long"
+            self.password_feedback.visible = True
+        elif not any(c.isupper() for c in password):
+            self.password_feedback.value = "Password must contain at least one uppercase letter"
+            self.password_feedback.visible = True
+        elif not any(c.islower() for c in password):
+            self.password_feedback.value = "Password must contain at least one lowercase letter"
+            self.password_feedback.visible = True
+        elif not any(c.isdigit() for c in password):
+            self.password_feedback.value = "Password must contain at least one number"
+            self.password_feedback.visible = True
+        else:
+            self.password_feedback.visible = False
+        self.update()

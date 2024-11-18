@@ -2,11 +2,12 @@ import flet as ft
 
 
 class LoginView(ft.UserControl):
-    def __init__(self, page: ft.Page, on_login=None, on_switch_to_signup=None):
+    def __init__(self, page: ft.Page, on_login=None, on_switch_to_signup=None, auth=None):
         super().__init__()
         self.page = page
         self.on_login = on_login
         self.on_switch_to_signup = on_switch_to_signup
+        self.auth = auth  # Use the shared instance
 
     def build(self):
         self.username_field = ft.TextField(
@@ -154,8 +155,58 @@ class LoginView(ft.UserControl):
             self.on_login(None, None)  # Pass None to indicate guest login
 
     def handle_forgot_password(self, e):
-        # To be implemented
-        pass
+        # Create references to the input fields
+        self.reset_username_field = ft.TextField(label="Username", border_radius=8, text_size=16, height=56)
+        self.reset_password_field = ft.TextField(
+            label="New Password", password=True, can_reveal_password=True, border_radius=8, text_size=16, height=56
+        )
+
+        self.page.dialog = ft.AlertDialog(
+            title=ft.Text("Reset Password"),
+            content=ft.Container(
+                width=400,
+                content=ft.Column(
+                    tight=True,
+                    controls=[
+                        self.reset_username_field,
+                        ft.Container(height=16),
+                        self.reset_password_field,
+                    ],
+                ),
+            ),
+            actions=[
+                ft.TextButton("Cancel", on_click=self.close_dialog),
+                ft.TextButton("Reset", on_click=self.reset_password),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        self.page.dialog.open = True
+        self.page.update()
+
+    def close_dialog(self, e):
+        self.page.dialog.open = False
+        self.page.update()
+
+    def reset_password(self, e):
+        username = self.reset_username_field.value
+        new_password = self.reset_password_field.value
+
+        if not username or not new_password:
+            self.page.snack_bar = ft.SnackBar(ft.Text("Please fill in all fields"), open=True)
+            self.page.update()
+            return
+
+        if username in self.auth.users["users"]:
+            # Hash the new password before saving
+            hashed_password = self.auth._hash_password(new_password)
+            self.auth.users["users"][username]["password"] = hashed_password
+            self.auth.save_users()
+            self.page.snack_bar = ft.SnackBar(ft.Text("Password reset successfully"), open=True)
+        else:
+            self.page.snack_bar = ft.SnackBar(ft.Text("Username not found"), open=True)
+
+        self.page.dialog.open = False
+        self.page.update()
 
     def switch_to_signup(self, e):
         if self.on_switch_to_signup:

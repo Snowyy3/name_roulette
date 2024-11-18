@@ -1,14 +1,22 @@
+import flet as ft
+from model.user_authentication import UserAuthentication
 from model.name_generator import NameGenerator
-from controller.group_former_controller import GroupFormationController
 from controller.user_authentication_controller import UserAuthenticationController
+from controller.name_generation_controller import NameGenerationController
+from controller.group_former_controller import GroupFormationController
 
 
 class MainController:
-    def __init__(self, page):
+    def __init__(self, page: ft.Page):
         self.page = page
-        self.name_generator = NameGenerator()
+
+        # Create a single UserAuthentication instance
+        self.user_auth = UserAuthentication()
+
+        # Initialize controllers with shared UserAuthentication instance
+        self.auth = UserAuthenticationController(page, auth=self.user_auth)
+        self.name_generation = NameGenerationController()
         self.group_formation = GroupFormationController()
-        self.auth = UserAuthenticationController(page)  # Initialize UserAuthenticationController
 
     def generate_name(self, names: list[str], num_names: int = 1) -> list[str]:
         return self.name_generator.get_random_names(names, num_names)
