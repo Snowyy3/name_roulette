@@ -241,32 +241,117 @@ class MainView(UserControl):
         self.user_account_button.update()
 
     def show_change_password_dialog(self, e):
+        def validate_new_password(e):
+            """Live validation for new password"""
+            password = new_password.value
+            error_message = None
+
+            if len(password) < 6:
+                error_message = "Password must be at least 6 characters long"
+            elif not any(c.isupper() for c in password):
+                error_message = "Password must contain at least one uppercase letter"
+            elif not any(c.islower() for c in password):
+                error_message = "Password must contain at least one lowercase letter"
+            elif not any(c.isdigit() for c in password):
+                error_message = "Password must contain at least one number"
+
+            password_feedback.value = error_message
+            password_feedback.visible = bool(error_message)
+            password_feedback.color = "#ef4444" if error_message else "#10b981"
+
+            # Check if passwords match
+            if confirm_password.value and password != confirm_password.value:
+                confirm_feedback.value = "Passwords do not match"
+                confirm_feedback.visible = True
+            else:
+                confirm_feedback.visible = False
+
+            self.page.update()
+
+        def validate_confirm_password(e):
+            """Live validation for password confirmation"""
+            if new_password.value != confirm_password.value:
+                confirm_feedback.value = "Passwords do not match"
+                confirm_feedback.visible = True
+            else:
+                confirm_feedback.visible = False
+            self.page.update()
+
         def handle_save_password(e):
+            if not current_password.value or not new_password.value or not confirm_password.value:
+                error_text.value = "Please fill in all fields"
+                error_text.visible = True
+                self.page.update()
+                return
+
+            if new_password.value != confirm_password.value:
+                error_text.value = "Passwords do not match"
+                error_text.visible = True
+                self.page.update()
+                return
+
             try:
                 self.controller.auth.change_password(
                     self.controller.auth.current_user["username"], current_password.value, new_password.value
                 )
                 dialog.open = False
-                self.page.update()
-                self.page.show_snack_bar(ft.SnackBar(content=ft.Text("Password changed successfully")))
+                self.page.show_snack_bar(
+                    ft.SnackBar(content=ft.Text("Password changed successfully"), bgcolor="#10b981")
+                )
             except ValueError as err:
                 error_text.value = str(err)
                 error_text.visible = True
                 self.page.update()
 
-        current_password = ft.TextField(label="Current Password", password=True, can_reveal_password=True)
-        new_password = ft.TextField(label="New Password", password=True, can_reveal_password=True)
-        error_text = ft.Text(color="red", visible=False)
+        # Create dialog components
+        current_password = ft.TextField(
+            label="Current Password", password=True, can_reveal_password=True, border_radius=8, text_size=16, height=56
+        )
+
+        new_password = ft.TextField(
+            label="New Password",
+            password=True,
+            can_reveal_password=True,
+            border_radius=8,
+            text_size=16,
+            height=56,
+            on_change=validate_new_password,
+        )
+
+        confirm_password = ft.TextField(
+            label="Confirm New Password",
+            password=True,
+            can_reveal_password=True,
+            border_radius=8,
+            text_size=16,
+            height=56,
+            on_change=validate_confirm_password,
+        )
+
+        password_feedback = ft.Text(size=14, color="#ef4444", visible=False)
+
+        confirm_feedback = ft.Text(size=14, color="#ef4444", visible=False)
+
+        error_text = ft.Text(color="#ef4444", size=14, visible=False, text_align=ft.TextAlign.CENTER)
 
         dialog = ft.AlertDialog(
             title=ft.Text("Change Password"),
-            content=ft.Column(
-                controls=[
-                    current_password,
-                    new_password,
-                    error_text,
-                ],
-                tight=True,
+            content=ft.Container(
+                width=400,
+                content=ft.Column(
+                    tight=True,
+                    controls=[
+                        current_password,
+                        ft.Container(height=8),
+                        new_password,
+                        password_feedback,
+                        ft.Container(height=8),
+                        confirm_password,
+                        confirm_feedback,
+                        ft.Container(height=8),
+                        error_text,
+                    ],
+                ),
             ),
             actions=[
                 ft.TextButton("Cancel", on_click=lambda e: setattr(dialog, "open", False)),

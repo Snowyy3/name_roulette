@@ -39,3 +39,20 @@ class UserAuthenticationController:
     def get_current_user(self) -> dict:
         """Get current user info"""
         return self.current_user or {"display_name": "Guest", "username": None}
+
+    def change_password(self, username: str, current_password: str, new_password: str) -> bool:
+        """
+        Change user's password.
+
+        Args:
+            username: Username whose password to change
+            current_password: Current password for verification
+            new_password: New password to set
+
+        Returns:
+            bool: True if password was changed successfully
+
+        Raises:
+            ValueError: If current password is incorrect
+        """
+        return self.auth.change_password(username, current_password, new_password)
