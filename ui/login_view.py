@@ -9,13 +9,14 @@ class LoginView(ft.UserControl):
         self.on_switch_to_signup = on_switch_to_signup
         self.auth = auth  # Use the shared instance
 
-    def build(self):
+    def build(self) -> ft.Container:
         self.username_field = ft.TextField(
             label="Username",
             border_radius=8,
             text_size=16,
             focused_border_color=ft.colors.GREEN,
-            border_color=ft.colors.with_opacity(0.5, ft.colors.ON_SURFACE),
+            focused_border_width=1,
+            border_color=ft.colors.with_opacity(0.25, ft.colors.ON_SURFACE),
             height=56,
         )
 
@@ -26,7 +27,8 @@ class LoginView(ft.UserControl):
             border_radius=8,
             text_size=16,
             focused_border_color=ft.colors.GREEN,
-            border_color=ft.colors.with_opacity(0.5, ft.colors.ON_SURFACE),
+            focused_border_width=1,
+            border_color=ft.colors.with_opacity(0.25, ft.colors.ON_SURFACE),
             height=56,
         )
 
@@ -44,7 +46,6 @@ class LoginView(ft.UserControl):
                     ),
                     ft.Container(height=32),  # Spacing
                     self.username_field,
-                    ft.Container(height=16),  # Spacing
                     self.password_field,
                     ft.Container(
                         content=ft.Text(
@@ -53,11 +54,11 @@ class LoginView(ft.UserControl):
                             size=14,
                         ),
                         alignment=ft.alignment.center_right,
-                        margin=ft.margin.only(top=8, bottom=16),
+                        margin=ft.margin.only(top=0, bottom=8),
                         on_click=self.handle_forgot_password,
                     ),
                     self.error_text,
-                    ft.Container(height=16),  # Spacing
+                    ft.Container(height=0),  # Spacing
                     ft.ElevatedButton(
                         content=ft.Text(
                             "Continue",
@@ -67,13 +68,12 @@ class LoginView(ft.UserControl):
                         style=ft.ButtonStyle(
                             color=ft.colors.WHITE,
                             bgcolor="#10b981",
-                            padding=ft.padding.symmetric(vertical=12),
-                            shape=ft.RoundedRectangleBorder(radius=8),
+                            padding=ft.padding.symmetric(vertical=20),
+                            shape=ft.RoundedRectangleBorder(radius=12),
                         ),
                         width=400,
                         on_click=self.handle_login,
                     ),
-                    ft.Container(height=16),  # Spacing
                     ft.Row(
                         controls=[
                             ft.Text("New here? ", size=14, color="#6b7280"),
@@ -81,7 +81,7 @@ class LoginView(ft.UserControl):
                                 text="Sign up",
                                 style=ft.ButtonStyle(
                                     color="#10b981",
-                                    padding=ft.padding.all(0),
+                                    padding=ft.padding.only(top=0, bottom=0),
                                 ),
                                 on_click=self.switch_to_signup,
                             ),
@@ -97,7 +97,7 @@ class LoginView(ft.UserControl):
                             ],
                             alignment=ft.MainAxisAlignment.CENTER,
                         ),
-                        margin=ft.margin.symmetric(vertical=16),
+                        padding=ft.padding.symmetric(vertical=16),
                     ),
                     ft.TextButton(
                         content=ft.Row(
@@ -109,7 +109,8 @@ class LoginView(ft.UserControl):
                         ),
                         style=ft.ButtonStyle(
                             bgcolor=ft.colors.SURFACE_VARIANT,
-                            shape=ft.RoundedRectangleBorder(radius=8),
+                            padding=ft.padding.symmetric(vertical=20),
+                            shape=ft.RoundedRectangleBorder(radius=12),
                         ),
                         width=400,
                         on_click=self.handle_guest_login,

@@ -123,12 +123,8 @@ class MainView(UserControl):
         )
 
     def handle_view_change(self, view: View):
-        """Handle view changes by updating the AppBar title and content area.
-
-        Args:
-            view (View): The view to switch to.
-        """
-        # Store previous view before changing, but only if not switching between LOGIN/SIGNUP
+        """Handle view changes by updating the AppBar title and content area."""
+        # Store previous view before changing
         if self.current_view not in [View.LOGIN, View.SIGNUP] or view not in [View.LOGIN, View.SIGNUP]:
             self.previous_view = self.current_view
 
@@ -147,6 +143,17 @@ class MainView(UserControl):
         if isinstance(self.content_area.content, Column):
             content_column = self.content_area.content
 
+            # Clear existing controls
+            content_column.controls.clear()
+
+            # Set alignment based on view type
+            if view in [View.LOGIN, View.SIGNUP]:
+                content_column.alignment = ft.MainAxisAlignment.CENTER
+            else:
+                content_column.alignment = ft.MainAxisAlignment.START
+                content_column.controls.append(Container(height=40))  # Add top spacing for non-login views
+
+            # Get appropriate view content
             if view == View.NAME_PICKER:
                 view_content = self.name_generation_view
             elif view == View.GROUP_FORMER:
@@ -162,12 +169,8 @@ class MainView(UserControl):
             elif view == View.SIGNUP:
                 view_content = self.signup_view
 
-            # Ensure we have space for the view content
-            if len(content_column.controls) < 2:
-                content_column.controls.append(view_content)
-            else:
-                content_column.controls[1] = view_content
-
+            # Add the view content
+            content_column.controls.append(view_content)
             self.content_area.update()
 
     def on_resize(self, _) -> None:
@@ -225,6 +228,8 @@ class MainView(UserControl):
             self.user_account_button.items = [
                 ft.PopupMenuItem(text="Log In", on_click=lambda _: self.handle_view_change(View.LOGIN))
             ]
+            # Muted colors for guest mode
+            button_color = "#6b7280"
         else:  # Logged in user
             button_content[0].name = ft.icons.MANAGE_ACCOUNTS_ROUNDED
             button_content[1].value = user["display_name"]
@@ -233,10 +238,12 @@ class MainView(UserControl):
                 ft.PopupMenuItem(text="Change Password", on_click=self.show_change_password_dialog),
                 ft.PopupMenuItem(text="Log Out", on_click=self.handle_logout),
             ]
+            # More vibrant colors for logged-in state
+            button_color = "#0b855d"  # Using the theme's green color
 
-        # Update colors based on state
+        # Update colors for all controls
         for control in button_content:
-            control.color = "#6b7280"
+            control.color = button_color
 
         self.user_account_button.update()
 
@@ -303,6 +310,10 @@ class MainView(UserControl):
                 error_text.visible = True
                 self.page.update()
 
+        def handle_cancel(e):
+            dialog.open = False
+            self.page.update()
+
         # Create dialog components
         current_password = ft.TextField(
             label="Current Password", password=True, can_reveal_password=True, border_radius=8, text_size=16, height=56
@@ -354,7 +365,7 @@ class MainView(UserControl):
                 ),
             ),
             actions=[
-                ft.TextButton("Cancel", on_click=lambda e: setattr(dialog, "open", False)),
+                ft.TextButton("Cancel", on_click=handle_cancel),
                 ft.TextButton("Save", on_click=handle_save_password),
             ],
             actions_alignment=ft.MainAxisAlignment.END,

@@ -16,7 +16,8 @@ class SignUpView(ft.UserControl):
             border_radius=8,
             text_size=16,
             focused_border_color=ft.colors.GREEN,
-            border_color=ft.colors.with_opacity(0.5, ft.colors.ON_SURFACE),
+            focused_border_width=1,
+            border_color=ft.colors.with_opacity(0.25, ft.colors.ON_SURFACE),
             height=56,
         )
 
@@ -25,7 +26,8 @@ class SignUpView(ft.UserControl):
             border_radius=8,
             text_size=16,
             focused_border_color=ft.colors.GREEN,
-            border_color=ft.colors.with_opacity(0.5, ft.colors.ON_SURFACE),
+            focused_border_width=1,
+            border_color=ft.colors.with_opacity(0.25, ft.colors.ON_SURFACE),
             height=56,
         )
 
@@ -36,7 +38,8 @@ class SignUpView(ft.UserControl):
             border_radius=8,
             text_size=16,
             focused_border_color=ft.colors.GREEN,
-            border_color=ft.colors.with_opacity(0.5, ft.colors.ON_SURFACE),
+            focused_border_width=1,
+            border_color=ft.colors.with_opacity(0.25, ft.colors.ON_SURFACE),
             height=56,
         )
 
@@ -73,13 +76,10 @@ class SignUpView(ft.UserControl):
                     ),
                     ft.Container(height=32),
                     self.display_name_field,
-                    ft.Container(height=16),
                     self.username_field,
                     self.username_feedback,
-                    ft.Container(height=16),
                     self.password_field,
                     self.password_feedback,
-                    ft.Container(height=16),
                     self.error_text,
                     ft.Container(height=16),
                     ft.ElevatedButton(
@@ -91,13 +91,12 @@ class SignUpView(ft.UserControl):
                         style=ft.ButtonStyle(
                             color=ft.colors.WHITE,
                             bgcolor="#10b981",
-                            padding=ft.padding.symmetric(vertical=12),
-                            shape=ft.RoundedRectangleBorder(radius=8),
+                            padding=ft.padding.symmetric(vertical=20),
+                            shape=ft.RoundedRectangleBorder(radius=12),
                         ),
                         width=400,
                         on_click=self.handle_signup,
                     ),
-                    ft.Container(height=16),
                     ft.Row(
                         controls=[
                             ft.Text("Already have an account? ", size=14, color="#6b7280"),
