@@ -1,149 +1,156 @@
 import flet as ft
+from flet import (
+    UserControl,
+    Container,
+    Column,
+    Text,
+    TextField,
+    Row,
+    ElevatedButton,
+    TextButton,
+    Icon,
+    Divider,
+    MainAxisAlignment,
+    CrossAxisAlignment,
+    alignment,
+    padding,
+    margin,
+    icons,
+    colors,
+    FontWeight,
+    SnackBar,
+)
 
 
-class LoginView(ft.UserControl):
+class LoginView(UserControl):
     def __init__(self, page: ft.Page, on_login=None, on_switch_to_signup=None, auth=None):
         super().__init__()
         self.page = page
         self.on_login = on_login
         self.on_switch_to_signup = on_switch_to_signup
-        self.auth = auth  # Use the shared instance
+        self.controller = auth.auth  # Access the UserAuthenticationController instead
 
-    def build(self) -> ft.Container:
-        self.username_field = ft.TextField(
+    def _create_input_fields(self):
+        self.username_field = TextField(
             label="Username",
             border_radius=8,
             text_size=16,
-            focused_border_color=ft.colors.GREEN,
+            focused_border_color=colors.GREEN,
             focused_border_width=1,
-            border_color=ft.colors.with_opacity(0.25, ft.colors.ON_SURFACE),
+            border_color=colors.with_opacity(0.25, colors.ON_SURFACE),
             height=56,
         )
 
-        self.password_field = ft.TextField(
+        self.password_field = TextField(
             label="Password",
             password=True,
             can_reveal_password=True,
             border_radius=8,
             text_size=16,
-            focused_border_color=ft.colors.GREEN,
+            focused_border_color=colors.GREEN,
             focused_border_width=1,
-            border_color=ft.colors.with_opacity(0.25, ft.colors.ON_SURFACE),
+            border_color=colors.with_opacity(0.25, colors.ON_SURFACE),
             height=56,
         )
 
-        self.error_text = ft.Text(color=ft.colors.RED_500, size=14, visible=False)
+        self.error_text = Text(color=colors.RED_500, size=14, visible=False)
 
-        return ft.Container(
-            content=ft.Column(
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+    def _create_forgot_password_link(self):
+        return Container(
+            content=Text("Forgot Password?", color="#10b981", size=14),
+            alignment=alignment.center_right,
+            margin=margin.only(top=0, bottom=8),
+            on_click=self.handle_forgot_password,
+        )
+
+    def _create_login_button(self):
+        return ElevatedButton(
+            content=Text("Continue", size=16, weight=FontWeight.W_500),
+            style=ft.ButtonStyle(
+                color=colors.WHITE,
+                bgcolor="#10b981",
+                padding=padding.symmetric(vertical=20),
+                shape=ft.RoundedRectangleBorder(radius=12),
+            ),
+            width=400,
+            on_click=self.handle_login,
+        )
+
+    def _create_signup_row(self):
+        return Row(
+            controls=[
+                Text("New here? ", size=14, color="#6b7280"),
+                TextButton(
+                    text="Sign up",
+                    style=ft.ButtonStyle(color="#10b981", padding=padding.only(top=0, bottom=0)),
+                    on_click=self.switch_to_signup,
+                ),
+            ],
+            alignment=MainAxisAlignment.CENTER,
+        )
+
+    def _create_divider_section(self):
+        return Container(
+            content=Row(
                 controls=[
-                    ft.Text(
-                        "Welcome back",
-                        size=28,
-                        weight=ft.FontWeight.BOLD,
-                        color="#13343b",
-                    ),
-                    ft.Container(height=32),  # Spacing
+                    Divider(color="#e0e0e0", thickness=1),
+                    Text("OR", size=14, color="#6b7280"),
+                    Divider(color="#e0e0e0", thickness=1),
+                ],
+                alignment=MainAxisAlignment.CENTER,
+            ),
+            padding=padding.symmetric(vertical=16),
+        )
+
+    def _create_guest_button(self):
+        return TextButton(
+            content=Row(
+                controls=[
+                    Icon(icons.PERSON_OFF, color="#6b7280"),
+                    Text("Continue as Guest", color="#6b7280"),
+                ],
+                alignment=MainAxisAlignment.CENTER,
+            ),
+            style=ft.ButtonStyle(
+                bgcolor=colors.SURFACE_VARIANT,
+                padding=padding.symmetric(vertical=20),
+                shape=ft.RoundedRectangleBorder(radius=12),
+            ),
+            width=400,
+            on_click=self.handle_guest_login,
+        )
+
+    def build(self) -> Container:
+        self._create_input_fields()
+
+        return Container(
+            content=Column(
+                horizontal_alignment=CrossAxisAlignment.CENTER,
+                controls=[
+                    Text("Welcome back", size=28, weight=FontWeight.BOLD, color="#13343b"),
+                    Container(height=32),
                     self.username_field,
                     self.password_field,
-                    ft.Container(
-                        content=ft.Text(
-                            "Forgot Password?",
-                            color="#10b981",
-                            size=14,
-                        ),
-                        alignment=ft.alignment.center_right,
-                        margin=ft.margin.only(top=0, bottom=8),
-                        on_click=self.handle_forgot_password,
-                    ),
+                    self._create_forgot_password_link(),
                     self.error_text,
-                    ft.Container(height=0),  # Spacing
-                    ft.ElevatedButton(
-                        content=ft.Text(
-                            "Continue",
-                            size=16,
-                            weight=ft.FontWeight.W_500,
-                        ),
-                        style=ft.ButtonStyle(
-                            color=ft.colors.WHITE,
-                            bgcolor="#10b981",
-                            padding=ft.padding.symmetric(vertical=20),
-                            shape=ft.RoundedRectangleBorder(radius=12),
-                        ),
-                        width=400,
-                        on_click=self.handle_login,
-                    ),
-                    ft.Row(
-                        controls=[
-                            ft.Text("New here? ", size=14, color="#6b7280"),
-                            ft.TextButton(  # Changed from Text to TextButton
-                                text="Sign up",
-                                style=ft.ButtonStyle(
-                                    color="#10b981",
-                                    padding=ft.padding.only(top=0, bottom=0),
-                                ),
-                                on_click=self.switch_to_signup,
-                            ),
-                        ],
-                        alignment=ft.MainAxisAlignment.CENTER,
-                    ),
-                    ft.Container(
-                        content=ft.Row(
-                            controls=[
-                                ft.Divider(color="#e0e0e0", thickness=1),
-                                ft.Text("OR", size=14, color="#6b7280"),
-                                ft.Divider(color="#e0e0e0", thickness=1),
-                            ],
-                            alignment=ft.MainAxisAlignment.CENTER,
-                        ),
-                        padding=ft.padding.symmetric(vertical=16),
-                    ),
-                    ft.TextButton(
-                        content=ft.Row(
-                            controls=[
-                                ft.Icon(ft.icons.PERSON_OFF, color="#6b7280"),
-                                ft.Text("Continue as Guest", color="#6b7280"),
-                            ],
-                            alignment=ft.MainAxisAlignment.CENTER,
-                        ),
-                        style=ft.ButtonStyle(
-                            bgcolor=ft.colors.SURFACE_VARIANT,
-                            padding=ft.padding.symmetric(vertical=20),
-                            shape=ft.RoundedRectangleBorder(radius=12),
-                        ),
-                        width=400,
-                        on_click=self.handle_guest_login,
-                    ),
+                    self._create_login_button(),
+                    self._create_signup_row(),
+                    self._create_divider_section(),
+                    self._create_guest_button(),
                 ],
             ),
             width=400,
             padding=32,
-            alignment=ft.alignment.center,
+            alignment=alignment.center,
         )
 
-    def validate_input(self) -> tuple[bool, str]:
-        """Validate login form input fields.
-
-        Returns:
-            tuple[bool, str]: (is_valid, error_message)
-        """
-        if not self.username_field.value:
-            return False, "Username is required"
-        if not self.password_field.value:
-            return False, "Password is required"
-        if len(self.username_field.value) < 3:
-            return False, "Username must be at least 3 characters long"
-        if len(self.password_field.value) < 6:
-            return False, "Password must be at least 6 characters long"
-        return True, ""
-
     def handle_login(self, e):
-        # Clear any previous errors
         self.clear_error()
 
-        # Validate input
-        is_valid, error_message = self.validate_input()
+        is_valid, error_message = self.controller.validate_login_input(
+            self.username_field.value, self.password_field.value
+        )
+
         if not is_valid:
             self.show_error(error_message)
             return
@@ -163,21 +170,21 @@ class LoginView(ft.UserControl):
         )
 
         self.page.dialog = ft.AlertDialog(
-            title=ft.Text("Reset Password"),
-            content=ft.Container(
+            title=Text("Reset Password"),
+            content=Container(
                 width=400,
-                content=ft.Column(
+                content=Column(
                     tight=True,
                     controls=[
                         self.reset_username_field,
-                        ft.Container(height=16),
+                        Container(height=16),
                         self.reset_password_field,
                     ],
                 ),
             ),
             actions=[
-                ft.TextButton("Cancel", on_click=self.close_dialog),
-                ft.TextButton("Reset", on_click=self.reset_password),
+                TextButton("Cancel", on_click=self.close_dialog),
+                TextButton("Reset", on_click=self.reset_password),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
@@ -193,20 +200,17 @@ class LoginView(ft.UserControl):
         new_password = self.reset_password_field.value
 
         if not username or not new_password:
-            self.page.snack_bar = ft.SnackBar(ft.Text("Please fill in all fields"), open=True)
+            self.page.snack_bar = SnackBar(Text("Please fill in all fields"), open=True)
             self.page.update()
             return
 
-        if username in self.auth.users["users"]:
-            # Hash the new password before saving
-            hashed_password = self.auth._hash_password(new_password)
-            self.auth.users["users"][username]["password"] = hashed_password
-            self.auth.save_users()
-            self.page.snack_bar = ft.SnackBar(ft.Text("Password reset successfully"), open=True)
-        else:
-            self.page.snack_bar = ft.SnackBar(ft.Text("Username not found"), open=True)
+        success, message = self.controller.reset_password(username, new_password)
 
-        self.page.dialog.open = False
+        if success:
+            self.page.dialog.open = False
+            self.page.show_snack_bar(SnackBar(Text("Password reset successfully"), bgcolor="#10b981"))
+        else:
+            self.page.show_snack_bar(SnackBar(Text(message), bgcolor="#ef4444"))
         self.page.update()
 
     def switch_to_signup(self, e):

@@ -103,3 +103,12 @@ class UserAuthentication:
         self.users["users"][username]["password"] = self._hash_password(new_password)
         self.save_users()
         return True
+
+    def reset_password(self, username: str, new_password: str) -> bool:
+        """Reset user's password without current password verification"""
+        if username not in self.users["users"]:
+            return False
+
+        self.users["users"][username]["password"] = self._hash_password(new_password)
+        self.save_users()
+        return True

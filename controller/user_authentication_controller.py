@@ -1,4 +1,5 @@
 import flet as ft
+from model.validation_service import ValidationService
 
 
 class UserAuthenticationController:
@@ -6,6 +7,7 @@ class UserAuthenticationController:
         self.page = page
         self.auth = auth  # Use the shared instance
         self.current_user = None
+        self.validation = ValidationService()
 
     def handle_login(self, username: str, password: str) -> bool:
         """Handle login attempt"""
@@ -56,3 +58,56 @@ class UserAuthenticationController:
             ValueError: If current password is incorrect
         """
         return self.auth.change_password(username, current_password, new_password)
+
+    def validate_login_input(self, username: str, password: str) -> tuple[bool, str]:
+        """Validate login input"""
+        username_valid, username_error = self.validation.validate_username(username)
+        if not username_valid:
+            return False, username_error
+
+        password_valid, password_error = self.validation.validate_password(password)
+        if not password_valid:
+            return False, password_error
+
+        return True, ""
+
+    def validate_signup_input(self, username: str, display_name: str, password: str) -> tuple[bool, str]:
+        """Validate signup input"""
+        display_name_valid, display_name_error = self.validation.validate_display_name(display_name)
+        if not display_name_valid:
+            return False, display_name_error
+
+        username_valid, username_error = self.validation.validate_username(username)
+        if not username_valid:
+            return False, username_error
+
+        password_valid, password_error = self.validation.validate_password(password)
+        if not password_valid:
+            return False, password_error
+
+        return True, ""
+
+    def reset_password(self, username: str, new_password: str) -> tuple[bool, str]:
+        """Handle password reset"""
+        password_valid, password_error = self.validation.validate_password(new_password)
+        if not password_valid:
+            return False, password_error
+
+        try:
+            # Hash and save new password
+            hashed_password = self.auth._hash_password(new_password)
+            self.auth.users["users"][username]["password"] = hashed_password
+            self.auth.save_users()
+            return True, "Password reset successfully"
+        except Exception as e:
+            return False, str(e)
+
+    def validate_username_availability(self, username: str) -> tuple[bool, str]:
+        """Check if username is available"""
+        if username in self.auth.users["users"]:
+            return False, "Username already exists"
+        return self.validation.validate_username(username)
+
+    def validate_password_live(self, password: str) -> tuple[bool, str]:
+        """Validate password for live feedback"""
+        return self.validation.validate_password(password)
