@@ -29,8 +29,8 @@ class NameGenerationView(UserControl):
         self.controller = controller
         self.name_generator = NameGenerator()
 
-        self.left_column_width = 300  # Initial size for the left column
-        self.middle_column_min_width = 320  # Initial size for the middle column (set as the minimum)
+        self.left_column_width = 380  # Initial size for the left column
+        self.middle_column_min_width = 500  # Initial size for the middle column (set as the minimum)
         self.right_column_width = 350  # Initial size for the right column
 
         
@@ -148,7 +148,7 @@ class NameGenerationView(UserControl):
             middle_width - e.delta_x >= self.middle_column_min_width
         ) or (
             e.delta_x < 0 and  # Dragging left
-            self.left_column_width > 200
+            self.left_column_width > 350
         ):
             self.left_column_width += e.delta_x
             self.input_area.width = self.left_column_width
@@ -168,11 +168,11 @@ class NameGenerationView(UserControl):
         # Ensure the right divider respects the minimum width of the middle column
         if (
             e.delta_x < 0 and  # Dragging left
-            self.right_column_width < 400 and
+            self.right_column_width < 800 and
             middle_width + e.delta_x >= self.middle_column_min_width
         ) or (
             e.delta_x > 0 and  # Dragging right
-            self.right_column_width > 200
+            self.right_column_width > 350
         ):
             self.right_column_width -= e.delta_x
             self.output_area.width = self.right_column_width
