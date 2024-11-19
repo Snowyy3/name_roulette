@@ -113,7 +113,11 @@ class GroupFormer:
         for name, gender in zip(names, genders):
             name = name.strip()
             gender = gender.strip().lower()
-            if name and gender in {"male", "female"}:
+            if name and gender in {"male", "female", "nam", "nữ"}:
+                if gender == "nam":
+                    gender = "male"
+                elif gender == "nữ":
+                    gender = "female"
                 cleaned_names.append((name, gender))
 
         return cleaned_names
