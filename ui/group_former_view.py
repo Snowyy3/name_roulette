@@ -42,7 +42,11 @@ class GroupFormationView(UserControl):
             height=200,
             border=ft.InputBorder.OUTLINE,
         )
-
+        self.error_message = ft.Text(
+            value="", 
+            color="red", 
+            size=12,  
+        )
         self.gender_input = TextField(
             label="Gender",
             multiline=True,
@@ -247,6 +251,7 @@ class GroupFormationView(UserControl):
                         content=Column(
                             [
                                 Text("Gender filler:", weight=ft.FontWeight.BOLD),
+                                self.error_message,
                                 Radio(value="none", label="None"),
                                 Row(
                                     [
@@ -497,6 +502,27 @@ class GroupFormationView(UserControl):
                 female_count = int(self.female_count_input.value) if self.selected_gender_filter == "female" else 0
             except ValueError:
                 female_count = 0
+
+    # check thông báo không đủ nam/nữ:
+        if self.selected_gender_filter != "none":
+            total_male = len([name for name, gender in names if gender == "male"])
+            total_female = len([name for name, gender in names if gender == "female"])
+
+            if total_male < male_count * group_num:
+                self.error_message.value = (
+                    f"Not enough males! Required: {male_count * group_num}, Available: {total_male}"
+                )
+                self.error_message.update()
+            
+            if total_female < female_count * group_num:
+                self.error_message.value = (
+                    f"Not enough females! Required: {female_count * group_num}, Available: {total_female}"
+                )
+                self.error_message.update()
+            else:
+                self.error_message.value = ""
+        # Check thông báo nếu đủ giới tính
+        self.error_message.update()
 
         # chia nhóm không có manual
         if self.selected_gender_filter == "none" and self.manual_group == "none":
