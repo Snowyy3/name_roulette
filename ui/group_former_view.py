@@ -126,7 +126,7 @@ class GroupFormationView(UserControl):
         )
         self.output_label = Text("Generated Groups:", weight=ft.FontWeight.BOLD)
         self.output_text = Container(
-            content=Column(
+            content= Column(
                 controls=[],
                 spacing=5,
                 expand=True,
@@ -453,8 +453,9 @@ class GroupFormationView(UserControl):
 
         # chia nhóm có manual
         elif self.manual_group !='none':
-            if self.existing_groups is None:
-                print('is none')
+            # no gender
+            if self.existing_groups is None and self.selected_gender_filter == 'none':
+                #print('is none')
                 group_size = (total_names + group_num - 1) // group_num
                 self.existing_groups = [[] for _ in range(group_num)]
             
@@ -475,9 +476,27 @@ class GroupFormationView(UserControl):
                     remaining_names = [name for name in names if name not in self.manually_assigned]
                     generated_groups = self.groupformer.manual_group_without_gender(remaining_names=remaining_names, existing_group=self.existing_groups,group_size=group_size, num_groups=group_num)
 
+            # with gender
+            if self.existing_groups is None and self.selected_gender_filter != 'none':
+                group_size = (total_names + group_num - 1) // group_num
+                self.existing_groups = [[] for _ in range(group_num)]
+
+                manually_assigned = []
+                k = 0
+                
+                for group_box in self.output_text.content.controls:
+                    #if not group_box.disabled:  # Nếu ô không bị disable, lấy tên nhập tay
+                        group_memberss = [n.strip() for n in group_box.value.splitlines() if n.strip()]
+                        group_members = [(name,gender) for name,gender in names if name in group_memberss] # list các tuple(assigned_name, gender)
+                        self.existing_groups[k].extend(group_members)
+                        manually_assigned.extend(group_memberss)
+                        k +=1
+                self.manually_assigned = manually_assigned # các tên đã được điền
+               
             elif self.selected_gender_filter != 'none': 
-                    remaining_names = [(name, gender) for name, gender in names if name not in self.manually_assigned ]        
-                    generated_groups = self.groupformer.manual_group_with_gender()
+                    remaining_names = [(name, gender) for name, gender in names if name not in self.manually_assigned ] 
+                    generated_groups = []       
+                    generated_groups = self.groupformer.manual_group_with_gender(remaining_names=remaining_names, existing_group= self.existing_groups, male_count= male_count, female_count=female_count, group_size= group_size, num_groups= group_num)
                     
 
         # STARTING

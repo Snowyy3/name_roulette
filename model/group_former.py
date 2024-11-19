@@ -155,7 +155,7 @@ class GroupFormer:
         gendered_names = self.separate_by_gender(names)
         males, females = gendered_names["male"], gendered_names["female"]
 
-        # Kiểm tra nếu đủ số lượng nam hoặc nữ để chia nhóm
+        # Kiểm tra nếu đủ số lượng nam hoặc nữ để chia nhóm # Phải sửa lại đoạn này
         if len(males) < num_groups and len(females) < num_groups:
             raise ValueError("Not enough males or females to form a group as required.")
 
@@ -207,6 +207,62 @@ class GroupFormer:
 
         return existing_groups
     
-    def manual_group_with_gender (self, names: list[tuple[str, str]], male_count: int, female_count: int, group_size: int = None, num_groups: int = None) -> list[str]:
-        return
-        return groups
+    def check_groups_gender(self, existing_groups, male_count, female_count, error_text):
+        for i, group in enumerate(existing_groups):
+            male_in_group = sum(1 for name, gender in group if gender == 'male')
+            female_in_group = sum(1 for name, gender in group if gender == 'female')
+            
+            # Kiểm tra nếu nhóm không đủ số nam hoặc nữ theo yêu cầu
+            if male_in_group < male_count:
+                error_text += f"\nNhóm {i+1} chưa đủ {male_count} nam."
+            if female_in_group < female_count:
+                error_text += f"\nNhóm {i+1} chưa đủ {female_count} nữ."
+        
+        return error_text
+    def manual_group_with_gender (self, remaining_names: list[tuple[str, str]], existing_group: list[list[tuple[str, str]]],  male_count: int, female_count: int, group_size: int, num_groups: int) -> list[list[str]]:
+        # Phân loại remaining_names theo giới tính
+        males = [name for name, gender in remaining_names if gender.lower() == "male"]
+        females = [name for name, gender in remaining_names if gender.lower() == "female"]
+
+        # Copy existing_group để tránh thay đổi input
+        groups = [group[:] for group in existing_group]
+
+        # Tạo hàm tính số lượng nam và nữ trong một nhóm
+        def count_gender(group):
+            group_males = len([name for name, gender in group if gender.lower() == "male"])
+            group_females = len([name for name, gender in group if gender.lower() == "female"])
+            return group_males, group_females
+
+
+        # Ưu tiên chia nữ trước
+        if male_count == 0: 
+            while females:
+                # Sắp xếp nhóm dựa trên số nữ hiện tại (nhóm rỗng sẽ được ưu tiên)
+                groups.sort(key=lambda g: count_gender(g)[1])  # Sắp xếp nhóm theo số lượng nữ
+                for group in groups:
+                    if len(group) < group_size and count_gender(group)[1] < female_count:
+                        group.append((females.pop(0), 'female'))  # Thêm 1 nữ vào nhóm
+                        break
+
+        # Sau đó chia nam
+        if female_count == 0:
+            while males:
+                # Sắp xếp nhóm dựa trên số nam hiện tại (nhóm rỗng sẽ được ưu tiên)
+                groups.sort(key=lambda g: count_gender(g)[0])  # Sắp xếp nhóm theo số lượng nam
+                for group in groups:
+                    if len(group) < group_size and count_gender(group)[0] < male_count:
+                        group.append((males.pop(0), 'male'))  # Thêm 1 nam vào nhóm
+                        break
+
+        # Chia đều remaining_names (nếu còn) vào các nhóm theo phương pháp round-robin
+        remaining_members = females + males
+        rd.shuffle(remaining_members)
+        for member in remaining_members:
+            for group in groups:
+                if len(group) < group_size:
+                    group.append((member, 'female' if member in females else 'male'))
+                    break
+
+        # Trả về danh sách các nhóm với chỉ tên
+        return [[name for name, gender in group] for group in groups]
+
