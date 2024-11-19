@@ -1,6 +1,5 @@
 import flet as ft
 from model.user_authentication import UserAuthentication
-from model.name_generator import NameGenerator
 from controller.user_authentication_controller import UserAuthenticationController
 from controller.name_generation_controller import NameGenerationController
 from controller.group_former_controller import GroupFormationController
@@ -11,6 +10,7 @@ class MainController:
         self.page = page
 
         # Create a single UserAuthentication instance
+        # Since if not, 2 instances = change password/forgot password are out of sync and won't work
         self.user_auth = UserAuthentication()
 
         # Initialize controllers with shared UserAuthentication instance

@@ -70,23 +70,24 @@ class MainView(UserControl):
 
         self.user_account_button = ft.PopupMenuButton(
             content=Container(
-                content=Row(
-                    controls=[
-                        Icon(ft.icons.PERSON_OFF_ROUNDED, color="#6b7280"),  # Default to guest icon
-                        Text("Guest", size=14, color="#6b7280"),
-                        Icon(ft.icons.ARROW_DROP_DOWN, color="#6b7280"),
-                    ],
-                    tight=True,
-                ),
-                padding=ft.padding.all(8),
-                border_radius=20,
-                bgcolor=ft.colors.SURFACE_VARIANT,
+            content=Row(
+                controls=[
+                Icon(ft.icons.PERSON_OFF_ROUNDED, color="#6b7280"),  # Default to guest icon
+                Text("Guest", size=14, color="#6b7280"),
+                Icon(ft.icons.ARROW_DROP_DOWN, color="#6b7280"),
+                ],
+                tight=True,
+            ),
+            padding=ft.padding.all(8),
+            border_radius=20,
+            bgcolor=ft.colors.SURFACE_VARIANT,
+            ink=False,  # Disable hover effect
             ),
             items=[
-                PopupMenuItem(
-                    text="Log In",
-                    on_click=lambda _: self.handle_view_change(View.LOGIN),
-                )
+            PopupMenuItem(
+                text="Log In",
+                on_click=lambda _: self.handle_view_change(View.LOGIN),
+            )
             ],
         )
 
