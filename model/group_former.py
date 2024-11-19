@@ -188,25 +188,24 @@ class GroupFormer:
 
         return groups
 
-    def manual_assignment(self, groups: list[list[str]], assignments: dict[int, list[str]]) -> list[list[str]]:
-        """
-        Manually assigns specific members to specific groups.
+    def manual_group_without_gender(self, remaining_names: list[str], existing_groups: list[list[str]], group_size: int, num_groups: int) -> list[list[str]]:
+        rd.shuffle(remaining_names)
+        # Xác định số thành viên ban đầu của từng nhóm
+        group_sizes = [len(group) for group in existing_groups]
 
-        Args:
-            groups (list[list[str]]): The list of groups created by 'group_formation'.
-            assignments (dict[int, list[str]]): A dictionary where keys are group indices (starting from 1) and
-                                                values are lists of names to be assigned to that group.
+        # Phân bổ tên vào nhóm
+        while remaining_names:
+            # Xác định số thành viên nhỏ nhất hiện tại
+            min_size = min(group_sizes)
 
-        Returns:
-            list[list[str]]: The list of groups after manual assignment.
-        """
-        for i, names in assignments.items():
-            group_index = i - 1
-            if group_index < 0 or group_index >= len(groups):
-                raise ValueError(f"Invalid group index: {i}. Group indices must be between 1 and {len(groups)}.")
-            if not isinstance(names, list) or not all(isinstance(name, str) for name in names):
-                raise TypeError("Values in 'assignments' must be lists of strings.")
+            # Phân bổ các tên cho các nhóm có số thành viên = min_size
+            for i, group in enumerate(existing_groups):
+                if len(group) == min_size and remaining_names:
+                    group.append(remaining_names.pop(0))  # Thêm tên vào nhóm
+                    group_sizes[i] += 1  # Cập nhật kích thước nhóm
 
-            groups[group_index].extend(names)
-
+        return existing_groups
+    
+    def manual_group_with_gender (self, names: list[tuple[str, str]], male_count: int, female_count: int, group_size: int = None, num_groups: int = None) -> list[str]:
+        return
         return groups
