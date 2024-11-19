@@ -4,6 +4,7 @@ from flet import (
     Row,
     Column,
     Container,
+    ListView,
     VerticalDivider,
     Text,
     TextField,
@@ -337,7 +338,14 @@ class NameGenerationView(UserControl):
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
-                    self.output_text,
+                    Container(
+                        content=ListView(
+                            controls=[self.output_text],  # Add `output_text` to the scrollable list
+                            spacing=10,
+                            expand=True,
+                    ),
+                    height=600,
+                    ),
                 ],
                 spacing=20,
                 expand=True,
