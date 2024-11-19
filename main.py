@@ -11,15 +11,15 @@ def main(page: Page) -> None:
     page.padding = 0
     page.window.min_width = 400
     page.window.min_height = 400
+
     page.auto_scroll = False
     page.scroll = None
     page.window.maximized = True
+
     main_controller = MainController(page)
-    main_view = MainView(page, main_controller)  # Create an instance of the MainView class
+    main_view = MainView(page, main_controller)
 
-    page.add(main_view)  # Add the main_view to the page
-
-    
+    page.add(main_view)
 
 
 if __name__ == "__main__":

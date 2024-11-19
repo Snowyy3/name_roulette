@@ -3,7 +3,6 @@ from flet import (
     UserControl,
     Row,
     Column,
-    Row,
     Container,
     VerticalDivider,
     Text,
@@ -18,6 +17,7 @@ from flet import (
 )
 from model.group_former import GroupFormer
 
+
 class GroupFormationView(UserControl):
     def __init__(self, controller):
         super().__init__()
@@ -26,17 +26,17 @@ class GroupFormationView(UserControl):
         self.groupformer = GroupFormer()
 
         self.left_column_width = 500  # Initial size for the left column
-        self.middle_column_min_width = 500  # Initial size for the middle column (set as the minimum)
-        self.right_column_width = 572  # Initial size for the right column
+        self.middle_column_min_width = 300  # Initial size for the middle column (set as the minimum)
+        self.right_column_width = 550  # Initial size for the right column
 
         # Initialize input fields
         self.names_input = TextField(
-            label='Name',
+            label="Name",
             multiline=True,
             min_lines=8,
             max_lines=20,
             expand=True,
-            height= 200,
+            height=200,
             border=ft.InputBorder.OUTLINE,
         )
 
@@ -45,7 +45,7 @@ class GroupFormationView(UserControl):
             multiline=True,
             min_lines=10,
             max_lines=20,
-            height= 200,
+            height=200,
             expand=True,
         )
 
@@ -95,25 +95,14 @@ class GroupFormationView(UserControl):
 
         self.selected_gender_filter = "none"
         self.male_count_input = TextField(
-            value="",
-            width=40,
-            height=35,
-            text_align="center",
-            content_padding=8,
-            disabled= True
+            value="", width=40, height=35, text_align="center", content_padding=8, disabled=True
         )
         self.female_count_input = TextField(
-            value="",
-            width=40,
-            height=35,
-            text_align="center",
-            content_padding=8,
-            disabled= True
+            value="", width=40, height=35, text_align="center", content_padding=8, disabled=True
         )
 
         self.generate_button = ElevatedButton(
             text="Generate Groups",
-            
             width=200,
             height=50,
             on_click=self.form_groups,
@@ -142,12 +131,12 @@ class GroupFormationView(UserControl):
 
         # Ensure the left divider respects the minimum width of the middle column
         if (
-            e.delta_x > 0 and  # Dragging right
-            self.left_column_width < 450 and
-            middle_width - e.delta_x >= self.middle_column_min_width
+            e.delta_x > 0  # Dragging right
+            and self.left_column_width < 700
+            and middle_width - e.delta_x >= self.middle_column_min_width
         ) or (
-            e.delta_x < 0 and  # Dragging left
-            self.left_column_width > 350
+            e.delta_x < 0  # Dragging left
+            and self.left_column_width > 350
         ):
             self.left_column_width += e.delta_x
             self.input_area.width = self.left_column_width
@@ -158,7 +147,6 @@ class GroupFormationView(UserControl):
             self.filter_area.width = middle_width
             self.filter_area.update()
 
-
     def move_right_divider(self, e: ft.DragUpdateEvent):
         """Handle dragging for the right divider."""
         total_width = self.page.width or 960  # Default page width
@@ -166,12 +154,12 @@ class GroupFormationView(UserControl):
 
         # Ensure the right divider respects the minimum width of the middle column
         if (
-            e.delta_x < 0 and  # Dragging left
-            self.right_column_width < 870 and
-            middle_width + e.delta_x >= self.middle_column_min_width
+            e.delta_x < 0  # Dragging left
+            and self.right_column_width < 700
+            and middle_width + e.delta_x >= self.middle_column_min_width
         ) or (
-            e.delta_x > 0 and  # Dragging right
-            self.right_column_width > 500
+            e.delta_x > 0  # Dragging right
+            and self.right_column_width > 350
         ):
             self.right_column_width -= e.delta_x
             self.output_area.width = self.right_column_width
@@ -181,7 +169,6 @@ class GroupFormationView(UserControl):
             middle_width += e.delta_x
             self.filter_area.width = middle_width
             self.filter_area.update()
-
 
     def build(self) -> Row:
         return Row(
@@ -237,13 +224,12 @@ class GroupFormationView(UserControl):
                 [
                     Text("Group Formation Settings:", weight=ft.FontWeight.BOLD),
                     Row(
-                        controls= [
+                        controls=[
                             self.group_size_input,
                             self.group_num_input,
                         ],
-                        spacing= 10
+                        spacing=10,
                     ),
-
                     Divider(height=1, color=ft.colors.GREY_400),
                     Text("Gender filler:", weight=ft.FontWeight.BOLD),
                     RadioGroup(
@@ -269,9 +255,9 @@ class GroupFormationView(UserControl):
                                     spacing=8,
                                 ),
                             ],
-                            spacing=8, 
+                            spacing=8,
                         ),
-                ),
+                    ),
                     self.generate_button,
                     self.clear_result_button,
                 ],
@@ -281,6 +267,7 @@ class GroupFormationView(UserControl):
             padding=20,
             alignment=ft.alignment.top_left,
         )
+
     def clear_result(self, e: ControlEvent) -> None:
         """Clear the generated result and disable the clear button."""
         self.output_text.value = ""
@@ -291,18 +278,17 @@ class GroupFormationView(UserControl):
         self.output_area.update()
         self.clear_result_button.update()
 
-    
     def copy_to_clipboard(self, e: ControlEvent) -> None:
         """Copy generated names to clipboard."""
         if self.output_text.value:
             self.page.set_clipboard(self.output_text.value)
             self.page.show_snack_bar(ft.SnackBar(content=Text("Copied to clipboard!")))
-    
+
     def update_selected_gender(self, e: ControlEvent) -> None:
         self.selected_gender_filter = e.control.value
 
         if self.selected_gender_filter == "none":
-        # Disable both male and female inputs when "None" is selected
+            # Disable both male and female inputs when "None" is selected
             self.male_count_input.value = ""
             self.male_count_input.disabled = True
             self.male_count_input.update()
@@ -310,7 +296,7 @@ class GroupFormationView(UserControl):
             self.female_count_input.value = ""
             self.female_count_input.disabled = True
             self.female_count_input.update()
-        
+
         elif self.selected_gender_filter == "male":
             # Enable male input and disable female input
             self.male_count_input.disabled = False
@@ -331,19 +317,20 @@ class GroupFormationView(UserControl):
             self.female_count_input.update()
             self.gender_input.update()
 
-        self.show_gender_column = self.selected_gender_filter != 'none'
+        self.show_gender_column = self.selected_gender_filter != "none"
         if self.show_gender_column:
             self.gender_column.visible = True
-            self.update() 
+            self.update()
         elif not self.show_gender_column:
             self.gender_column.visible = False
-            self.update()             
+            self.update()
+
     def _build_output_area(self) -> Container:
         return Container(
             content=Column(
                 [
-                    Row (
-                        controls= [
+                    Row(
+                        controls=[
                             self.output_label,
                             self.copy_button,
                         ],
@@ -358,7 +345,7 @@ class GroupFormationView(UserControl):
             ),
             padding=20,
             alignment=ft.alignment.top_left,
-            width = self.right_column_width,
+            width=self.right_column_width,
         )
 
     def update_group_size(self, e):
@@ -386,7 +373,6 @@ class GroupFormationView(UserControl):
             e.control.error_text = "Must be a number"
             e.control.update()
 
-
     def update_group_num(self, e):
         try:
             # Lấy danh sách các tên
@@ -412,26 +398,24 @@ class GroupFormationView(UserControl):
             e.control.error_text = "Must be a number"
             e.control.update()
 
-
     def form_groups(self, e):
-        
         try:
-                group_size = int(self.group_size_input.value or 0)
-                group_num = int(self.group_num_input.value or 0)
+            group_size = int(self.group_size_input.value or 0)
+            group_num = int(self.group_num_input.value or 0)
 
         except ValueError:
-                return
-        
-        if self.selected_gender_filter == 'none':  
-            names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]  
+            return
+
+        if self.selected_gender_filter == "none":
+            names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
             if not names:
-                    return
+                return
 
             generated_groups = self.controller.form_groups(names, group_size, group_num)
 
-        else: 
+        else:
             # return list[tuple[name, gender]
-            names = self.groupformer.get_cleaned_names(self.names_input.value,self.gender_input.value)
+            names = self.groupformer.get_cleaned_names(self.names_input.value, self.gender_input.value)
             try:
                 male_count = int(self.male_count_input.value) if self.selected_gender_filter == "male" else 0
             except ValueError:
@@ -442,9 +426,10 @@ class GroupFormationView(UserControl):
             except ValueError:
                 female_count = 0
 
-            #form group
-            generated_groups = self.groupformer.generate_names_with_gender(names, male_count= male_count, female_count= female_count, group_size= group_size, num_groups= group_num)
-
+            # form group
+            generated_groups = self.groupformer.generate_names_with_gender(
+                names, male_count=male_count, female_count=female_count, group_size=group_size, num_groups=group_num
+            )
 
         # Format output
         output = []
