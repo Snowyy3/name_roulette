@@ -301,24 +301,34 @@ class GroupFormationView(UserControl):
         return Container(
             content=Column(
                 [
-                    Row(
+                    Row(  # Header row for "Generated Groups" and Copy button
                         controls=[
-                            self.output_label,
+                            self.output_label,  # "Generated Groups" label
                             self.copy_button,
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
-                    self.output_text,
+                    Container(  # Scrollable section starts here
+                        content=Column(
+                            controls=[
+                                self.output_text,  # All groups will be inside this column
+                            ],
+                            spacing=20,
+                            scroll=ft.ScrollMode.AUTO,  # Enable scrolling here
+                            expand=True,
+                        ),
+                        expand=True,
+                        height=500,  # Adjust height as needed for scrolling  # Optional: Add border for clarity
+                    ),
                 ],
                 spacing=20,
-                expand=True,
-                scroll=ft.ScrollMode.AUTO,
                 alignment=ft.MainAxisAlignment.START,
             ),
             expand=True,
             padding=20,
-            alignment=ft.alignment.top_left,
         )
+
+
 
     def update_group_size(self, e):
         try:
@@ -510,7 +520,7 @@ class GroupFormationView(UserControl):
                 value=f"{group_text}",  # Group name and members
                 multiline=True,  # Allow multiple lines
                 width=200,  # Adjust width of the TextField
-                height=100,  # Adjust height of the TextField
+                #height=100,  # Adjust height of the TextField
                 text_align=ft.TextAlign.LEFT,  # Align text to the left
                 border=ft.border.all(1, ft.colors.GREY_300),  # Optional: Add border for styling
             )
