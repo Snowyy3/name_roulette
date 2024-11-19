@@ -1,5 +1,5 @@
 import random as rd
-
+import copy
 
 class GroupFormer:
     def __init__(self):
@@ -188,8 +188,9 @@ class GroupFormer:
 
         return groups
 
-    def manual_group_without_gender(self, remaining_names: list[str], existing_groups: list[list[str]], group_size: int, num_groups: int) -> list[list[str]]:
+    def manual_group_without_gender(self, remaining_names: list[str], existing_group: list[list[str]], group_size: int, num_groups: int) -> list[list[str]]:
         rd.shuffle(remaining_names)
+        existing_groups = copy.deepcopy(existing_group)
         # Xác định số thành viên ban đầu của từng nhóm
         group_sizes = [len(group) for group in existing_groups]
 

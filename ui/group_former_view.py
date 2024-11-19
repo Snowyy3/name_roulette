@@ -25,6 +25,8 @@ class GroupFormationView(UserControl):
         self.show_gender_column = False
         self.groupformer = GroupFormer()
         self.manual_group = "none"
+        self.manually_assigned_names = []
+        self.existing_groups = None
 
         # Initialize input fields
         self.names_input = TextField(
@@ -244,6 +246,9 @@ class GroupFormationView(UserControl):
     def clear_result(self, e: ControlEvent) -> None:
         """Clear the generated result and disable the clear button."""
         self.output_text.content.controls.clear()
+        self.manually_assigned_names = []
+        self.existing_groups = None
+
         self.output_text.update()
         self.output_label.value = "Generated name:"
         self.clear_result_button.disabled = True
@@ -417,7 +422,6 @@ class GroupFormationView(UserControl):
         if self.selected_gender_filter == 'none':
             # Không lọc giới tính
             names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
-            genders = []  # Không cần xử lý giới tính
         else:
             # Lọc giới tính: trả về danh sách tuple (name, gender)
             names = self.groupformer.get_cleaned_names(self.names_input.value, self.gender_input.value)
@@ -449,31 +453,38 @@ class GroupFormationView(UserControl):
 
         # chia nhóm có manual
         elif self.manual_group !='none':
-            group_size = (total_names + group_num - 1) // group_num
-            existing_groups = [[] for _ in range(group_num)]
-        
-            manually_assigned = []
-            k = 0
-            for group_box in self.output_text.content.controls:
-                #if not group_box.disabled:  # Nếu ô không bị disable, lấy tên nhập tay
-                    group_members = [n.strip() for n in group_box.value.splitlines() if n.strip()]
-                    existing_groups[k].extend(group_members)
-                    manually_assigned.extend(group_members)
-                    k +=1
+            if self.existing_groups is None:
+                print('is none')
+                group_size = (total_names + group_num - 1) // group_num
+                self.existing_groups = [[] for _ in range(group_num)]
+            
+                manually_assigned = []
+                k = 0
+                for group_box in self.output_text.content.controls:
+                    #if not group_box.disabled:  # Nếu ô không bị disable, lấy tên nhập tay
+                        group_members = [n.strip() for n in group_box.value.splitlines() if n.strip()]
+                        self.existing_groups[k].extend(group_members)
+                        manually_assigned.extend(group_members)
+                        k +=1
+
+                self.manually_assigned = manually_assigned
+                
             remaining_names = []
             
             if self.selected_gender_filter == 'none':
-                remaining_names = [name for name in names if name not in manually_assigned]
-                generated_groups = self.groupformer.manual_group_without_gender(remaining_names=remaining_names, existing_groups=existing_groups,group_size=group_size, num_groups=group_num)
+                    remaining_names = [name for name in names if name not in self.manually_assigned]
+                    generated_groups = self.groupformer.manual_group_without_gender(remaining_names=remaining_names, existing_group=self.existing_groups,group_size=group_size, num_groups=group_num)
 
             elif self.selected_gender_filter != 'none': 
-                remaining_names = [(name, gender) for name, gender in names if name not in manually_assigned ]        
-                generated_groups = self.groupformer.manual_group_with_gender()
-                
+                    remaining_names = [(name, gender) for name, gender in names if name not in self.manually_assigned ]        
+                    generated_groups = self.groupformer.manual_group_with_gender()
+                    
 
         # STARTING
         # Format output
         self.output_text.content.controls.clear()
+        self.output_area.update()
+        self.output_text.update()
         for i, group in enumerate(generated_groups, 1):
             group_text = "\n".join([f"{name}" for name in group])  # Create the text for the group
     
