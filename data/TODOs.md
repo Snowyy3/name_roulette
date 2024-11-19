@@ -5,5 +5,10 @@
 - Use Switch for toggle Light/Dark theme
 - Use password with reveal button for password field in login
 - Change layout of header and sidebar
-- - Group former view: thêm OR, giảm size của placeholder, và thêm sound như name picker
+- Group former view:
+  + thêm OR
+  + giảm size của placeholder
+  + thêm sound như name picker
+  + fix drag interval bug
+  + tăng padding/margin giữa các output groups boxes
 - # TODO: Major refactor of controllers and related logics (aside from login, sign up, user auth)
