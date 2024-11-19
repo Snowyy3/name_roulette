@@ -28,6 +28,10 @@ class GroupFormationView(UserControl):
         self.manually_assigned_names = []
         self.existing_groups = None
 
+        self.left_column_width = 500  # Initial size for the left column
+        self.middle_column_min_width = 300  # Initial size for the middle column (set as the minimum)
+        self.right_column_width = 550  # Initial size for the right column
+
         # Initialize input fields
         self.names_input = TextField(
             label="Name",
@@ -125,19 +129,79 @@ class GroupFormationView(UserControl):
             padding=20,
             alignment=ft.alignment.top_left,
         )
+        self.input_area = self._build_input_area()
         self.output_area = self._build_output_area()
+        self.filter_area = self._build_filter_area()
+
+    def move_left_divider(self, e: ft.DragUpdateEvent):
+        """Handle dragging for the left divider."""
+        total_width = self.page.width or 960  # Default page width
+        middle_width = total_width - self.left_column_width - self.right_column_width - 14  # Gap between dividers
+
+        # Ensure the left divider respects the minimum width of the middle column
+        if (
+            e.delta_x > 0  # Dragging right
+            and self.left_column_width < 700
+            and middle_width - e.delta_x >= self.middle_column_min_width
+        ) or (
+            e.delta_x < 0  # Dragging left
+            and self.left_column_width > 350
+        ):
+            self.left_column_width += e.delta_x
+            self.input_area.width = self.left_column_width
+            self.input_area.update()
+
+            # Dynamically adjust middle column width
+            middle_width -= e.delta_x
+            self.filter_area.width = middle_width
+            self.filter_area.update()
+
+    def move_right_divider(self, e: ft.DragUpdateEvent):
+        """Handle dragging for the right divider."""
+        total_width = self.page.width or 960  # Default page width
+        middle_width = total_width - self.left_column_width - self.right_column_width - 14  # Gap between dividers
+
+        # Ensure the right divider respects the minimum width of the middle column
+        if (
+            e.delta_x < 0  # Dragging left
+            and self.right_column_width < 700
+            and middle_width + e.delta_x >= self.middle_column_min_width
+        ) or (
+            e.delta_x > 0  # Dragging right
+            and self.right_column_width > 350
+        ):
+            self.right_column_width -= e.delta_x
+            self.output_area.width = self.right_column_width
+            self.output_area.update()
+
+            # Dynamically adjust middle column width
+            middle_width += e.delta_x
+            self.filter_area.width = middle_width
+            self.filter_area.update()
 
     def build(self) -> Row:
         return Row(
             [
-                self._build_input_area(),
-                self._build_divider(),
-                self._build_filter_area(),
-                self._build_divider(),
+                self.input_area,
+                ft.GestureDetector(
+                    content=ft.VerticalDivider(width=7, color=ft.colors.GREY, thickness=1),
+                    drag_interval=10,
+                    on_pan_update=self.move_left_divider,
+                    on_hover=self.show_draggable_cursor,
+                ),
+                self.filter_area,
+                ft.GestureDetector(
+                    content=ft.VerticalDivider(width=7, color=ft.colors.GREY, thickness=1),
+                    drag_interval=10,
+                    on_pan_update=self.move_right_divider,
+                    on_hover=self.show_draggable_cursor,
+                ),
                 self.output_area,
             ],
             spacing=0,
             expand=True,
+            height=self.page.height if self.page else None,
+            alignment=ft.MainAxisAlignment.START,
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
@@ -155,9 +219,9 @@ class GroupFormationView(UserControl):
                 expand=True,
                 scroll=ft.ScrollMode.AUTO,
             ),
-            expand=True,
             padding=20,
             alignment=ft.alignment.top_left,
+            width=self.left_column_width,
         )
 
     def _build_divider(self) -> VerticalDivider:
@@ -222,7 +286,6 @@ class GroupFormationView(UserControl):
                 spacing=20,
                 alignment=ft.MainAxisAlignment.START,
             ),
-            expand=True,
             padding=20,
             alignment=ft.alignment.top_left,
         )
@@ -315,9 +378,9 @@ class GroupFormationView(UserControl):
                 scroll=ft.ScrollMode.AUTO,
                 alignment=ft.MainAxisAlignment.START,
             ),
-            expand=True,
             padding=20,
             alignment=ft.alignment.top_left,
+            width=self.right_column_width,
         )
 
     def update_group_size(self, e):
@@ -520,3 +583,8 @@ class GroupFormationView(UserControl):
         self.output_text.update()
         self.clear_result_button.disabled = False
         self.clear_result_button.update()
+
+    def show_draggable_cursor(self, e: ft.HoverEvent) -> None:
+        """Show draggable cursor when hovering over the divider."""
+        e.control.mouse_cursor = ft.MouseCursor.RESIZE_LEFT_RIGHT
+        e.control.update()

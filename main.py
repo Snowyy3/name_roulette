@@ -12,11 +12,9 @@ def main(page: Page) -> None:
     page.window.min_width = 600
     page.window.min_height = 400
 
-    page.window.width = 1600
-    page.window.height = 900
-    page.window.full_screen = False
-    page.window.title_bar_hidden = False
-    page.window.title_bar_buttons_hidden = False
+    page.auto_scroll = False
+    page.scroll = None
+    page.window.maximized = True
 
     main_controller = MainController(page)
     main_view = MainView(page, main_controller)

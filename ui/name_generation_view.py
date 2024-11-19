@@ -4,6 +4,7 @@ from flet import (
     Row,
     Column,
     Container,
+    ListView,
     VerticalDivider,
     Text,
     TextField,
@@ -14,6 +15,7 @@ from flet import (
     Divider,
     IconButton,
     icons,
+    Audio,
 )
 from model.name_generator import NameGenerator
 import asyncio
@@ -27,7 +29,11 @@ class NameGenerationView(UserControl):
         super().__init__()
         self.controller = controller
         self.name_generator = NameGenerator()
-        
+
+        self.left_column_width = 500  # Initial size for the left column
+        self.middle_column_min_width = 300  # Decreased minimum size for the middle column
+        self.right_column_width = 550  # Initial size for the right column
+
         self.num_names_input = TextField(
             value="",
             width=40,
@@ -35,6 +41,7 @@ class NameGenerationView(UserControl):
             text_align="center",
             content_padding=8,
             disabled=True,  # Initially disabled for the custom option
+            on_change=self.validate_input,
         )
 
         self.selected_num = "1"
@@ -47,7 +54,7 @@ class NameGenerationView(UserControl):
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=8,
             ),
-            on_click=self.generate_random_name,
+            on_click=self.handle_randomize_click,
             width=200,
             disabled=False,
             height=50,
@@ -61,7 +68,7 @@ class NameGenerationView(UserControl):
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=8,
             ),
-            on_click=self.clear_result,
+            on_click=self.handle_clear_click,
             width=200,
             disabled=True,
             height=50,
@@ -123,16 +130,89 @@ class NameGenerationView(UserControl):
         )
         self.input_area = self._build_input_area()
         self.output_area = self._build_output_area()
-        
+
+        self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
+        self.clear_sound = Audio(src="clear.mp3", autoplay=False)
+
+        self.filter_area = self._build_filter_area()
+
+    def move_left_divider(self, e: ft.DragUpdateEvent):
+        """Handle dragging for the left divider."""
+        total_width = self.page.width or 960  # Default page width
+        middle_width = total_width - self.left_column_width - self.right_column_width - 14  # Gap between dividers
+
+        # Ensure the left divider respects the minimum width of the middle column
+        if (
+            e.delta_x > 0  # Dragging right
+            and self.left_column_width < 700  # Increased maximum width for the left column
+            and middle_width - e.delta_x >= self.middle_column_min_width
+        ) or (
+            e.delta_x < 0  # Dragging left
+            and self.left_column_width > 350
+        ):
+            self.left_column_width += e.delta_x
+            self.input_area.width = self.left_column_width
+            self.input_area.update()
+
+            # Dynamically adjust middle column width
+            middle_width -= e.delta_x
+            self.filter_area.width = middle_width
+            self.filter_area.update()
+
+    def move_right_divider(self, e: ft.DragUpdateEvent):
+        """Handle dragging for the right divider."""
+        total_width = self.page.width or 960  # Default page width
+        middle_width = total_width - self.left_column_width - self.right_column_width - 14  # Gap between dividers
+
+        # Ensure the right divider respects the minimum width of the middle column
+        if (
+            e.delta_x < 0  # Dragging left
+            and self.right_column_width < 700
+            and middle_width + e.delta_x >= self.middle_column_min_width
+        ) or (
+            e.delta_x > 0  # Dragging right
+            and self.right_column_width > 350
+        ):
+            self.right_column_width -= e.delta_x
+            self.output_area.width = self.right_column_width
+            self.output_area.update()
+
+            # Dynamically adjust middle column width
+            middle_width += e.delta_x
+            self.filter_area.width = middle_width
+            self.filter_area.update()
+
+    def handle_randomize_click(self, e: ControlEvent) -> None:
+        """Handles the randomize button click and plays a sound effect."""
+        self.randomize_sound.play()  # Play the sound effect
+        self.generate_random_name(e)  # Call the original logic
+
+    def handle_clear_click(self, e: ControlEvent) -> None:
+        """Handles the Clear Result button click and plays a sound effect."""
+        self.clear_sound.play()  # Play the sound effect
+        self.clear_result(e)  # Call the original clear result logic
+
     def build(self) -> Row:
         """Builds the main layout of the Name Generation view."""
         return Row(
             controls=[
-                self.input_area,
-                self._build_divider(),
-                self._build_filter_area(),
-                self._build_divider(),
-                self.output_area,
+                self.input_area,  # Left column
+                ft.GestureDetector(
+                    content=ft.VerticalDivider(width=7, color=ft.colors.GREY, thickness=1),
+                    drag_interval=10,
+                    on_pan_update=self.move_left_divider,
+                    on_hover=self.show_draggable_cursor,
+                ),
+                self.filter_area,  # Middle column
+                ft.GestureDetector(
+                    content=ft.VerticalDivider(width=7, color=ft.colors.GREY, thickness=1),
+                    drag_interval=10,
+                    on_pan_update=self.move_right_divider,
+                    on_hover=self.show_draggable_cursor,
+                ),
+                self.output_area,  # Right column
+                self.randomize_sound,
+                self.clear_sound,
             ],
             spacing=0,
             expand=True,
@@ -151,7 +231,7 @@ class NameGenerationView(UserControl):
             controls=[self.names_input, self.gender_input],  # Include gender_input in the row
             spacing=8,
             alignment=ft.MainAxisAlignment.START,
-            expand=True
+            expand=True,
         )
 
         return Container(
@@ -169,13 +249,13 @@ class NameGenerationView(UserControl):
                         expand=True,
                     ),
                 ],
-                spacing=20, 
+                spacing=20,
                 expand=True,
-                scroll=ft.ScrollMode.AUTO,  
+                scroll=ft.ScrollMode.AUTO,
             ),
-            expand=True,
-            padding=20,  
-            alignment=ft.alignment.top_left,  
+            width=self.left_column_width,
+            padding=20,
+            alignment=ft.alignment.top_left,
         )
 
     def _build_divider(self) -> VerticalDivider:
@@ -199,7 +279,7 @@ class NameGenerationView(UserControl):
                                 Row(
                                     [
                                         Radio(value="custom", label="Custom: "),
-                                        self.num_names_input,
+                                        self.num_names_input,  # Add the TextField here
                                     ],
                                     spacing=8,
                                 ),
@@ -258,13 +338,20 @@ class NameGenerationView(UserControl):
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
-                    self.output_text,
+                    Container(
+                        content=ListView(
+                            controls=[self.output_text],  # Add `output_text` to the scrollable list
+                            spacing=10,
+                            expand=True,
+                        ),
+                        height=500,
+                    ),
                 ],
                 spacing=20,
                 expand=True,
                 alignment=ft.MainAxisAlignment.START,
             ),
-            expand=True,
+            width=self.right_column_width,
             padding=20,
             alignment=ft.alignment.top_left,
         )
@@ -284,7 +371,6 @@ class NameGenerationView(UserControl):
         self.num_names_input.update()
         self.validate_input()
 
-
     def validate_input(self, e: ControlEvent = None) -> None:
         """UI event handler for input validation."""
         names = self.name_generator.get_cleaned_names(self.names_input.value or "")
@@ -294,9 +380,11 @@ class NameGenerationView(UserControl):
             is_valid = self.name_generator.validate_input(names, self.selected_num, self.num_names_input.value)
         else:
             is_valid = self.name_generator.validate_input(
-                names, self.selected_num, self.num_names_input.value,
+                names,
+                self.selected_num,
+                self.num_names_input.value,
                 male_count=self.male_count_input.value or "0",
-                female_count=self.female_count_input.value or "0"
+                female_count=self.female_count_input.value or "0",
             )
 
         self.randomize_button.disabled = not is_valid
@@ -308,8 +396,7 @@ class NameGenerationView(UserControl):
 
         if self.selected_gender_filter == "none":
             generated_names = self.name_generator.generate_random_names_without_gender(
-                names_text=self.names_input.value or "",
-                total_count=total_count
+                names_text=self.names_input.value or "", total_count=total_count
             )
         else:
             try:
@@ -328,11 +415,13 @@ class NameGenerationView(UserControl):
                 selected_num=self.selected_num,
                 custom_value=self.num_names_input.value,
                 male_count=male_count,
-                female_count=female_count
+                female_count=female_count,
             )
 
         if not generated_names:
-            self.output_text.value = "Unable to generate names. Please make sure there are enough names to meet your selected counts."
+            self.output_text.value = (
+                "Unable to generate names. Please make sure there are enough names to meet your selected counts."
+            )
             self.output_area.update()
             return
 
@@ -401,9 +490,14 @@ class NameGenerationView(UserControl):
             self.page.show_snack_bar(ft.SnackBar(content=Text("Copied to clipboard!")))
 
     async def handle_save_list_click(self, e: ControlEvent) -> None:
-        """Temporarily changes the icon to show save confirmation."""
+        """Temporarily changes the icon to show save confirmation. Kind of like animating :)) fun, y'know"""
         self.save_list_button.icon = icons.BOOKMARK_ADDED
         self.save_list_button.update()
         await asyncio.sleep(3)
         self.save_list_button.icon = icons.BOOKMARK_ADD_OUTLINED
         self.save_list_button.update()
+
+    def show_draggable_cursor(self, e: ft.HoverEvent) -> None:
+        """Show draggable cursor when hovering over the divider."""
+        e.control.mouse_cursor = ft.MouseCursor.RESIZE_LEFT_RIGHT
+        e.control.update()
