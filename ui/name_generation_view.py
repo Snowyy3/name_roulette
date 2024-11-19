@@ -344,7 +344,7 @@ class NameGenerationView(UserControl):
                             spacing=10,
                             expand=True,
                     ),
-                    height=600,
+                    height=500,
                     ),
                 ],
                 spacing=20,
