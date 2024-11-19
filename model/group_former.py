@@ -1,4 +1,5 @@
 import random as rd
+import copy
 
 
 class GroupFormer:
@@ -33,7 +34,7 @@ class GroupFormer:
             raise TypeError("'group_size' must be an integer.")
         if num_groups is not None and not isinstance(num_groups, int):
             raise TypeError("'num_groups' must be an integer.")
-        
+
         # Validate input values
         if group_size is not None and group_size <= 0:
             raise ValueError("'group_size' must be a positive integer.")
@@ -113,11 +114,15 @@ class GroupFormer:
         for name, gender in zip(names, genders):
             name = name.strip()
             gender = gender.strip().lower()
-            if name and gender in {"male", "female"}:
+            if name and gender in {"male", "female", "nam", "nữ"}:
+                if gender == "nam":
+                    gender = "male"
+                elif gender == "nữ":
+                    gender = "female"
                 cleaned_names.append((name, gender))
 
         return cleaned_names
-    
+
     def separate_by_gender(self, names: list[tuple[str, str]]) -> dict[str, list[str]]:
         """Separate names by gender based on parsed tuples.
 
@@ -130,8 +135,15 @@ class GroupFormer:
         males = [name for name, gender in names if gender == "male"]
         females = [name for name, gender in names if gender == "female"]
         return {"male": males, "female": females}
-    
-    def generate_names_with_gender(self, names: list[tuple[str, str]], male_count: int, female_count: int, group_size: int = None, num_groups: int = None) -> list[str]:
+
+    def generate_names_with_gender(
+        self,
+        names: list[tuple[str, str]],
+        male_count: int,
+        female_count: int,
+        group_size: int = None,
+        num_groups: int = None,
+    ) -> list[str]:
         """Tạo danh sách nhóm với số lượng nam và nữ chính xác trong tổng số đã cho.
 
         Args:
@@ -155,12 +167,12 @@ class GroupFormer:
         gendered_names = self.separate_by_gender(names)
         males, females = gendered_names["male"], gendered_names["female"]
 
-        # Kiểm tra nếu đủ số lượng nam hoặc nữ để chia nhóm
+        # Kiểm tra nếu đủ số lượng nam hoặc nữ để chia nhóm # Phải sửa lại đoạn này
         if len(males) < num_groups and len(females) < num_groups:
             raise ValueError("Not enough males or females to form a group as required.")
 
         groups = [[] for _ in range(num_groups)]
-        
+
         # Chắc chắn mỗi nhóm có ít nhất một nam nếu có đủ nam
         if len(males) >= num_groups:
             for i in range(num_groups):
@@ -188,25 +200,90 @@ class GroupFormer:
 
         return groups
 
-    def manual_assignment(self, groups: list[list[str]], assignments: dict[int, list[str]]) -> list[list[str]]:
-        """
-        Manually assigns specific members to specific groups.
+    def manual_group_without_gender(
+        self, remaining_names: list[str], existing_group: list[list[str]], group_size: int, num_groups: int
+    ) -> list[list[str]]:
+        rd.shuffle(remaining_names)
+        existing_groups = copy.deepcopy(existing_group)
+        # Xác định số thành viên ban đầu của từng nhóm
+        group_sizes = [len(group) for group in existing_groups]
 
-        Args:
-            groups (list[list[str]]): The list of groups created by 'group_formation'.
-            assignments (dict[int, list[str]]): A dictionary where keys are group indices (starting from 1) and
-                                                values are lists of names to be assigned to that group.
+        # Phân bổ tên vào nhóm
+        while remaining_names:
+            # Xác định số thành viên nhỏ nhất hiện tại
+            min_size = min(group_sizes)
 
-        Returns:
-            list[list[str]]: The list of groups after manual assignment.
-        """
-        for i, names in assignments.items():
-            group_index = i - 1
-            if group_index < 0 or group_index >= len(groups):
-                raise ValueError(f"Invalid group index: {i}. Group indices must be between 1 and {len(groups)}.")
-            if not isinstance(names, list) or not all(isinstance(name, str) for name in names):
-                raise TypeError("Values in 'assignments' must be lists of strings.")
+            # Phân bổ các tên cho các nhóm có số thành viên = min_size
+            for i, group in enumerate(existing_groups):
+                if len(group) == min_size and remaining_names:
+                    group.append(remaining_names.pop(0))  # Thêm tên vào nhóm
+                    group_sizes[i] += 1  # Cập nhật kích thước nhóm
 
-            groups[group_index].extend(names)
+        return existing_groups
 
-        return groups
+    def check_groups_gender(self, existing_groups, male_count, female_count, error_text):
+        for i, group in enumerate(existing_groups):
+            male_in_group = sum(1 for name, gender in group if gender == "male")
+            female_in_group = sum(1 for name, gender in group if gender == "female")
+
+            # Kiểm tra nếu nhóm không đủ số nam hoặc nữ theo yêu cầu
+            if male_in_group < male_count:
+                error_text += f"\nNhóm {i + 1} chưa đủ {male_count} nam."
+            if female_in_group < female_count:
+                error_text += f"\nNhóm {i + 1} chưa đủ {female_count} nữ."
+
+        return error_text
+
+    def manual_group_with_gender(
+        self,
+        remaining_names: list[tuple[str, str]],
+        existing_group: list[list[tuple[str, str]]],
+        male_count: int,
+        female_count: int,
+        group_size: int,
+        num_groups: int,
+    ) -> list[list[str]]:
+        # Phân loại remaining_names theo giới tính
+        males = [name for name, gender in remaining_names if gender.lower() == "male"]
+        females = [name for name, gender in remaining_names if gender.lower() == "female"]
+
+        # Copy existing_group để tránh thay đổi input
+        groups = [group[:] for group in existing_group]
+
+        # Tạo hàm tính số lượng nam và nữ trong một nhóm
+        def count_gender(group):
+            group_males = len([name for name, gender in group if gender.lower() == "male"])
+            group_females = len([name for name, gender in group if gender.lower() == "female"])
+            return group_males, group_females
+
+        # Ưu tiên chia nữ trước
+        if male_count == 0:
+            while females:
+                # Sắp xếp nhóm dựa trên số nữ hiện tại (nhóm rỗng sẽ được ưu tiên)
+                groups.sort(key=lambda g: count_gender(g)[1])  # Sắp xếp nhóm theo số lượng nữ
+                for group in groups:
+                    if len(group) < group_size and count_gender(group)[1] < female_count:
+                        group.append((females.pop(0), "female"))  # Thêm 1 nữ vào nhóm
+                        break
+
+        # Sau đó chia nam
+        if female_count == 0:
+            while males:
+                # Sắp xếp nhóm dựa trên số nam hiện tại (nhóm rỗng sẽ được ưu tiên)
+                groups.sort(key=lambda g: count_gender(g)[0])  # Sắp xếp nhóm theo số lượng nam
+                for group in groups:
+                    if len(group) < group_size and count_gender(group)[0] < male_count:
+                        group.append((males.pop(0), "male"))  # Thêm 1 nam vào nhóm
+                        break
+
+        # Chia đều remaining_names (nếu còn) vào các nhóm theo phương pháp round-robin
+        remaining_members = females + males
+        rd.shuffle(remaining_members)
+        for member in remaining_members:
+            for group in groups:
+                if len(group) < group_size:
+                    group.append((member, "female" if member in females else "male"))
+                    break
+
+        # Trả về danh sách các nhóm với chỉ tên
+        return [[name for name, gender in group] for group in groups]
