@@ -29,9 +29,9 @@ class NameGenerationView(UserControl):
         self.controller = controller
         self.name_generator = NameGenerator()
 
-        self.left_column_width = 380  # Initial size for the left column
+        self.left_column_width = 500  # Initial size for the left column
         self.middle_column_min_width = 500  # Initial size for the middle column (set as the minimum)
-        self.right_column_width = 350  # Initial size for the right column
+        self.right_column_width = 550  # Initial size for the right column
 
         
         self.num_names_input = TextField(
