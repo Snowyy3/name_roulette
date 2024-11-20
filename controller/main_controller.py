@@ -164,3 +164,20 @@ class MainController:
     def handle_clipboard_copy(self, text: str) -> bool:
         """Delegate to name generation controller."""
         return self.name_generation.handle_clipboard_copy(text)
+
+    def handle_input_change(self, names: str, group_size: str, group_num: str) -> tuple[int, int] | tuple[None, None]:
+        """Delegate input change handling to group formation controller"""
+        try:
+            return self.group_formation.handle_input_change(names, group_size, group_num)
+        except Exception as e:
+            logger.error(f"Error handling input change: {e}")
+            return None, None
+
+    def form_groups(self, names: list[str], **kwargs) -> list[list[str]]:
+        """Delegate group formation to group formation controller."""
+        try:
+            return self.group_formation.form_groups(names, **kwargs)
+        except Exception as e:
+            logger.error(f"Error forming groups: {e}", exc_info=True)
+            self.page.show_snack_bar(ft.SnackBar(content=ft.Text("Error forming groups!")))
+            return []

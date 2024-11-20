@@ -4,7 +4,40 @@ import copy
 
 class GroupFormer:
     def __init__(self):
-        pass
+        self._reset_state()
+
+    def _reset_state(self):
+        """Reset internal state"""
+        self.current_groups = []
+        self.remaining_names = []
+
+    def validate_input(self, names: list[str], group_size: int = None, num_groups: int = None) -> bool:
+        """Validate input parameters"""
+        if not names:
+            return False
+
+        if group_size is not None and (not isinstance(group_size, int) or group_size <= 0):
+            return False
+
+        if num_groups is not None and (not isinstance(num_groups, int) or num_groups <= 0):
+            return False
+
+        return True
+
+    def calculate_group_parameters(
+        self, total_names: int, group_size: int = None, num_groups: int = None
+    ) -> tuple[int, int]:
+        """Calculate optimal group size and number of groups"""
+        if group_size is None and num_groups is None:
+            # Default to roughly square root for both if neither is specified
+            num_groups = max(1, int(total_names**0.5))
+            group_size = (total_names + num_groups - 1) // num_groups
+        elif group_size is not None:
+            num_groups = max(1, (total_names + group_size - 1) // group_size)
+        else:  # num_groups is not None
+            group_size = max(1, (total_names + num_groups - 1) // num_groups)
+
+        return group_size, num_groups
 
     def group_formation(self, names: list[str], group_size: int = None, num_groups: int = None):
         """
@@ -73,6 +106,7 @@ class GroupFormer:
         #     num_groups = (len(names) + group_size - 1) // group_size
 
         return group_size, num_groups
+
     def handle_uneven_groups(
         self, groups: list[list[str]], remaining_members: list[str], distribute_randomly: bool = True
     ) -> list[list[str]]:
@@ -143,89 +177,112 @@ class GroupFormer:
         female_count: int,
         group_size: int = None,
         num_groups: int = None,
-    ) -> list[str]:
-        """Tạo danh sách nhóm với số lượng nam và nữ chính xác trong tổng số đã cho.
-
-        Args:
-            names (list[tuple[str, str]]): Danh sách tên kèm giới tính.
-            male_count (int): Số lượng nam cần chọn.
-            female_count (int): Số lượng nữ cần chọn.
-            group_size (int, optional): Kích thước nhóm (số lượng người trong mỗi nhóm).
-            num_groups (int, optional): Số nhóm cần chia.
-
-        Returns:
-            list[str]: Danh sách các nhóm đã được chia, hoặc danh sách rỗng nếu không thể tạo nhóm theo yêu cầu.
-        """
-
+    ) -> list[list[str]]:
+        """Generate gender-balanced groups"""
         if not names:
             return []
 
+        # Ensure we have either group_size or num_groups
         if group_size is None and num_groups is None:
-            raise ValueError("Phải cung cấp ít nhất 'group_size' hoặc 'num_groups'.")
+            # Default to group size based on total count and gender requirements
+            total_per_group = max(male_count + female_count, 1)
+            group_size = total_per_group
+            num_groups = (len(names) + group_size - 1) // group_size
+        elif num_groups is None:
+            num_groups = (len(names) + group_size - 1) // group_size
+        elif group_size is None:
+            group_size = (len(names) + num_groups - 1) // num_groups
 
-        # Kiểm tra số lượng nam và nữ có đủ cho mỗi nhóm không
+        # Separate by gender
         gendered_names = self.separate_by_gender(names)
         males, females = gendered_names["male"], gendered_names["female"]
 
-        # Kiểm tra nếu đủ số lượng nam hoặc nữ để chia nhóm # Phải sửa lại đoạn này
-        if len(males) < num_groups and len(females) < num_groups:
-            raise ValueError("Not enough males or females to form a group as required.")
-
+        # Initialize groups
         groups = [[] for _ in range(num_groups)]
 
-        # Chắc chắn mỗi nhóm có ít nhất một nam nếu có đủ nam
-        if len(males) >= num_groups:
+        # Validate gender requirements can be met
+        if male_count > 0 and len(males) < male_count * num_groups:
+            raise ValueError(f"Not enough males to meet requirement of {male_count} per group")
+        if female_count > 0 and len(females) < female_count * num_groups:
+            raise ValueError(f"Not enough females to meet requirement of {female_count} per group")
+
+        # Distribute required males first
+        if male_count > 0:
             for i in range(num_groups):
-                group_males = rd.sample(males, 1)
-                groups[i].append(group_males[0])
-                males.remove(group_males[0])
+                group_males = rd.sample(males, male_count)
+                groups[i].extend((name, "male") for name in group_males)
+                for name in group_males:
+                    males.remove(name)
 
-        # Chắc chắn mỗi nhóm có ít nhất một nữ nếu có đủ nữ
-        if len(females) >= num_groups:
+        # Then distribute required females
+        if female_count > 0:
             for i in range(num_groups):
-                group_females = rd.sample(females, 1)
-                groups[i].append(group_females[0])
-                females.remove(group_females[0])
+                group_females = rd.sample(females, female_count)
+                groups[i].extend((name, "female") for name in group_females)
+                for name in group_females:
+                    females.remove(name)
 
-        # Phân bổ các tên còn lại vào nhóm
-        remaining_names = females + males
-        rd.shuffle(remaining_names)
-        index = 0
-        for name in remaining_names:
-            groups[index].append(name)
-            index = (index + 1) % num_groups
+        # Distribute remaining members evenly
+        remaining = [(name, "male") for name in males] + [(name, "female") for name in females]
+        rd.shuffle(remaining)
 
-        # Lọc bỏ nhóm trống
-        groups = [g for g in groups if g]
+        i = 0
+        while remaining and any(len(group) < group_size for group in groups):
+            if len(groups[i]) < group_size:
+                groups[i].append(remaining.pop())
+            i = (i + 1) % num_groups
 
-        return groups
+        # Extract just the names from the (name, gender) tuples
+        return [[name for name, _ in group] for group in groups if group]
 
-    def counting_name(self,names_only: list[str]) -> dict:
-            names_count = dict()
-            for name_only in names_only:
-                if name_only in names_count.keys():
-                    names_count[name_only] +=1
-                else:
-                    names_count[name_only] = 1
-            return names_count
+    def counting_name(self, names_only: list[str]) -> dict[str, int]:
+        """
+        Count occurrences of each name in the input list.
+
+        Args:
+            names_only (list[str]): List of names to count
+
+        Returns:
+            dict[str, int]: Dictionary mapping names to their occurrence count
+        """
+        names_count = {}
+        for name in names_only:
+            names_count[name] = names_count.get(name, 0) + 1
+        return names_count
+
     def manual_group_without_gender(
         self, remaining_names: list[str], existing_group: list[list[str]], group_size: int, num_groups: int
     ) -> list[list[str]]:
+        """Handle manual group formation with validation and edge cases"""
+        # Validate inputs
+        if not isinstance(remaining_names, list):
+            remaining_names = []
+
+        if not isinstance(existing_group, list):
+            existing_group = [[] for _ in range(num_groups)]
+
+        if len(existing_group) < num_groups:
+            # Add empty groups if needed
+            existing_group.extend([[] for _ in range(num_groups - len(existing_group))])
+
+        # Create copy and proceed with distribution
         rd.shuffle(remaining_names)
         existing_groups = copy.deepcopy(existing_group)
-        # Xác định số thành viên ban đầu của từng nhóm
+
+        # Get current group sizes
         group_sizes = [len(group) for group in existing_groups]
 
-        # Phân bổ tên vào nhóm
-        while remaining_names:
-            # Xác định số thành viên nhỏ nhất hiện tại
-            min_size = min(group_sizes)
+        # Distribute remaining names
+        for name in remaining_names:
+            # Find group with minimum size that hasn't reached max size
+            valid_groups = [i for i, size in enumerate(group_sizes) if size < group_size]
+            if not valid_groups:
+                break
 
-            # Phân bổ các tên cho các nhóm có số thành viên = min_size
-            for i, group in enumerate(existing_groups):
-                if len(group) == min_size and remaining_names:
-                    group.append(remaining_names.pop(0))  # Thêm tên vào nhóm
-                    group_sizes[i] += 1  # Cập nhật kích thước nhóm
+            # Add to smallest valid group
+            min_group_idx = min(valid_groups, key=lambda i: group_sizes[i])
+            existing_groups[min_group_idx].append(name)
+            group_sizes[min_group_idx] += 1
 
         return existing_groups
 

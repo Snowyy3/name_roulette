@@ -8,15 +8,12 @@ from flet import (
     Text,
     TextField,
     ElevatedButton,
-    RadioGroup,
-    Radio,
+    Audio,
     ControlEvent,
-    Divider,
     IconButton,
     icons,
-    Audio,
 )
-from model.group_former import GroupFormer
+from . import group_former_ui_helper as ui_helper
 import asyncio
 import logging
 
@@ -27,22 +24,43 @@ class GroupFormationView(UserControl):
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
+        self._initialize_state()
+        self._initialize_ui_components()
+
+    def _initialize_state(self):
+        """Initialize state variables"""
         self.show_gender_column = False
-        self.groupformer = GroupFormer()
         self.manual_group = "none"
         self.manually_assigned_names = []
         self.existing_groups = None
         self.current_list = None
         self.remaining_counts = None
+        self.last_updated = None
+        self.selected_gender_filter = "none"
 
-        self.left_column_width = 500  # Initial size for the left column
-        self.middle_column_min_width = 300  # Initial size for the middle column (set as the minimum)
-        self.right_column_width = 550  # Initial size for the right column
+        # Column widths
+        self.left_column_width = 500
+        self.middle_column_min_width = 300
+        self.right_column_width = 550
 
+    def _initialize_ui_components(self):
+        """Initialize all UI components"""
+        # Audio components
         self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
         self.clear_sound = Audio(src="clear.mp3", autoplay=False)
 
-        # Initialize input fields
+        # Setup individual components first
+        self._setup_input_fields()
+        self._setup_buttons()
+        self._setup_columns()
+
+        # Create main areas
+        self.input_area = self._build_input_row()  # Changed from _build_input_area()
+        self.filter_area = self._build_filter_area()
+        self.output_area = self._build_output_area()
+
+    def _setup_input_fields(self):
+        """Initialize input field components"""
         self.names_input = TextField(
             label="Name",
             multiline=True,
@@ -51,9 +69,18 @@ class GroupFormationView(UserControl):
             expand=True,
             height=200,
             border=ft.InputBorder.OUTLINE,
-            on_change=self.addition_update_group_size_group_num,
+            on_change=self._handle_input_change,
         )
-        self.last_updated = None  # Lưu trạng thái: 'group_size' hoặc 'group_num'
+
+        self.gender_input = TextField(
+            label="Gender",
+            multiline=True,
+            min_lines=10,
+            max_lines=20,
+            height=200,
+            expand=True,
+        )
+
         self.error_message = ft.Text(
             value="",
             color="red",
@@ -69,25 +96,18 @@ class GroupFormationView(UserControl):
             color="red",
             size=12,
         )
-        self.gender_input = TextField(
-            label="Gender",
-            multiline=True,
-            min_lines=10,
-            max_lines=20,
-            height=200,
-            expand=True,
+
+    def _setup_buttons(self):
+        """Initialize button components"""
+        # Copy button
+        self.copy_button = IconButton(
+            icon=icons.COPY_ALL_ROUNDED,
+            icon_size=20,
+            visible=True,
+            tooltip="Copy to clipboard",
+            on_click=self.copy_to_clipboard,
         )
 
-        self.name_column = Column(
-            [self.names_input],
-            expand=2,
-        )
-
-        self.gender_column = Column(
-            [self.gender_input],
-            visible=self.show_gender_column,
-            expand=1,
-        )
         self.save_list_button = IconButton(
             icon=icons.BOOKMARK_ADD_OUTLINED,
             icon_size=20,
@@ -95,17 +115,16 @@ class GroupFormationView(UserControl):
             on_click=self.handle_save_list_click,
         )
 
-        self.input_area = Row(
-            [self.name_column, self.gender_column],
-            spacing=10,
-            expand=True,
+        self.generate_button = ElevatedButton(
+            text="Generate Groups",
+            width=200,
+            height=50,
+            on_click=self.handle_randomize_click,
         )
+
         self.clear_result_button = ElevatedButton(
             content=Row(
-                [
-                    ft.Icon(icons.CLEAR_ROUNDED),
-                    Text("Clear Result"),
-                ],
+                [ft.Icon(icons.CLEAR_ROUNDED), Text("Clear Result")],
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=8,
             ),
@@ -114,6 +133,30 @@ class GroupFormationView(UserControl):
             disabled=True,
             height=50,
         )
+
+    def _setup_columns(self):
+        """Setup column layouts"""
+        # Base columns
+        self.name_column = Column([self.names_input], expand=2)
+        self.gender_column = Column([self.gender_input], visible=self.show_gender_column, expand=1)
+
+        # Input area row (will be replaced by _build_input_area later)
+        self.input_row = Row([self.name_column, self.gender_column], spacing=10, expand=True)
+
+        # Output container setup
+        self.output_text = Container(
+            content=Column(controls=[], spacing=20, expand=True, scroll=ft.ScrollMode.AUTO),
+            expand=True,
+            padding=20,
+            alignment=ft.alignment.top_left,
+        )
+
+        self.output_label = Row(
+            [Text("Generated Groups:", weight=ft.FontWeight.BOLD), self.copy_button],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        )
+
+        # Initialize input fields that filter_area will need
         self.group_size_input = TextField(
             label="Max Group Size",
             width=150,
@@ -130,50 +173,103 @@ class GroupFormationView(UserControl):
             border=ft.InputBorder.OUTLINE,
         )
 
-        self.selected_gender_filter = "none"
+        # Gender count inputs
         self.male_count_input = TextField(
             value="", width=40, height=35, text_align="center", content_padding=8, disabled=True
         )
+
         self.female_count_input = TextField(
             value="", width=40, height=35, text_align="center", content_padding=8, disabled=True
         )
 
-        self.generate_button = ElevatedButton(
-            text="Generate Groups",
-            width=200,
-            height=50,
-            on_click=self.handle_randomize_click,
-        )
-        self.copy_button = IconButton(
-            icon=icons.COPY_ALL_ROUNDED,
-            icon_size=20,
-            visible=True,
-            tooltip="Copy to clipboard",
-            on_click=self.copy_to_clipboard,
-        )
-        self.output_label = Row(
-            [
-                Text("Generated Groups:", weight=ft.FontWeight.BOLD),
-                self.copy_button,
-            ],
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        )
-        self.output_text = Container(
-            content=Column(
-                controls=[],
-                spacing=20,
-                expand=True,
-                scroll=ft.ScrollMode.AUTO,
-            ),
-            expand=True,
-            padding=20,
-            alignment=ft.alignment.top_left,
-        )
-        self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
-        self.clear_sound = Audio(src="clear.mp3", autoplay=False)
-        self.input_area = self._build_input_area()
-        self.output_area = self._build_output_area()
-        self.filter_area = self._build_filter_area()
+    def _handle_input_change(self, e):
+        """Handle changes in the input fields"""
+        try:
+            new_size, new_num = self.controller.handle_input_change(
+                names=self.names_input.value,
+                group_size=self.group_size_input.value,
+                group_num=self.group_num_input.value,
+            )
+
+            if new_size is not None:
+                self.group_size_input.value = str(new_size)
+                self.group_size_input.update()
+
+            if new_num is not None:
+                self.group_num_input.value = str(new_num)
+                self.group_num_input.update()
+
+        except Exception as e:
+            logger.error(f"Error handling input change: {e}")
+
+    def form_groups(self):
+        """Delegate group formation to controller"""
+        try:
+            # Get basic parameters
+            names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
+            if not names:
+                return
+
+            group_size = int(self.group_size_input.value or 0)
+            group_num = int(self.group_num_input.value or 0)
+
+            # Handle gender-specific parameters
+            male_count = 0
+            female_count = 0
+            if self.selected_gender_filter in ["male", "female"]:
+                if self.selected_gender_filter == "male":
+                    try:
+                        male_count = int(self.male_count_input.value)
+                    except ValueError:
+                        male_count = 0
+                else:
+                    try:
+                        female_count = int(self.female_count_input.value)
+                    except ValueError:
+                        female_count = 0
+
+                # Get names with gender information
+                names = self.controller.group_formation.group_former.get_cleaned_names(
+                    self.names_input.value, self.gender_input.value
+                )
+
+            # Delegate to controller with all parameters
+            generated_groups = self.controller.form_groups(
+                names,
+                group_size=group_size,
+                group_num=group_num,
+                gender_filter=self.selected_gender_filter,
+                male_count=male_count,
+                female_count=female_count,
+                manual_group=self.manual_group,
+                existing_groups=self.existing_groups,
+            )
+
+            self._update_output_display(generated_groups)
+
+        except Exception as e:
+            logger.error(f"Error forming groups: {e}")
+            self.error_message.value = str(e)
+            self.error_message.update()
+
+    def _update_output_display(self, groups):
+        """Update the output display with formed groups"""
+        self.output_text.content.controls.clear()
+
+        for i, group in enumerate(groups, 1):
+            group_text = "\n".join([f"• {name}" for name in group])
+            group_box = TextField(
+                label=f"Group {i}",
+                value=group_text,
+                multiline=True,
+                width=200,
+                text_align=ft.TextAlign.LEFT,
+                border=ft.border.all(1, ft.colors.GREY_300),
+                on_change=self._handle_manual_input,
+            )
+            self.output_text.content.controls.append(group_box)
+
+        self._update_ui_state()
 
     def move_left_divider(self, e: ft.DragUpdateEvent):
         """Handle dragging for the left divider."""
@@ -250,97 +346,13 @@ class GroupFormationView(UserControl):
         )
 
     def _build_input_area(self) -> Container:
-        return Container(
-            content=Column(
-                [
-                    Row(
-                        [
-                            Text("Enter names (one per line)", weight=ft.FontWeight.BOLD),
-                            self.save_list_button,
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    ),
-                    Container(
-                        content=self.input_area,
-                        expand=True,
-                    ),
-                ],
-                spacing=20,
-                expand=True,
-                scroll=ft.ScrollMode.AUTO,
-            ),
-            padding=20,
-            alignment=ft.alignment.top_left,
-            width=self.left_column_width,
-        )
+        return ui_helper.build_input_area(self)
 
     def _build_divider(self) -> VerticalDivider:
         return VerticalDivider(width=7, color=ft.colors.GREY, thickness=1)
 
     def _build_filter_area(self) -> Container:
-        return Container(
-            content=Column(
-                [
-                    Text("Group Formation Settings:", weight=ft.FontWeight.BOLD),
-                    Row(
-                        controls=[
-                            self.group_size_input,
-                            Text("OR", weight=ft.FontWeight.BOLD),
-                            self.group_num_input,
-                        ],
-                        spacing=10,
-                    ),
-                    Divider(height=1, color=ft.colors.GREY_400),
-                    # Text("Gender filler:", weight=ft.FontWeight.BOLD),
-                    RadioGroup(
-                        value=self.selected_gender_filter,
-                        on_change=self.update_selected_gender,
-                        content=Column(
-                            [
-                                Text("Gender filler:", weight=ft.FontWeight.BOLD),
-                                self.error_message,
-                                Radio(value="none", label="None"),
-                                Row(
-                                    [
-                                        Radio(value="male"),
-                                        self.male_count_input,
-                                        Text(" males"),
-                                    ],
-                                    spacing=8,
-                                ),
-                                Row(
-                                    [
-                                        Radio(value="female"),
-                                        self.female_count_input,
-                                        Text(" females"),
-                                    ],
-                                    spacing=8,
-                                ),
-                            ],
-                            spacing=8,
-                        ),
-                    ),
-                    Text("Manually Assign:", weight=ft.FontWeight.BOLD),
-                    RadioGroup(
-                        value=self.manual_group,  # = 'none'
-                        on_change=self.update_selected_manual_group,
-                        content=Column([
-                            Row([
-                                # Text('Manually Assign:',weight=ft.FontWeight.BOLD),
-                                Radio(value="none", label="None"),
-                                Radio(value="manual", label="Manual"),
-                            ])
-                        ]),
-                    ),
-                    self.generate_button,
-                    self.clear_result_button,
-                ],
-                spacing=20,
-                alignment=ft.MainAxisAlignment.START,
-            ),
-            padding=20,
-            alignment=ft.alignment.top_left,
-        )
+        return ui_helper.build_filter_area(self)
 
     def handle_name_input(self, e):
         print("e")
@@ -416,7 +428,7 @@ class GroupFormationView(UserControl):
     def handle_randomize_click(self, e: ControlEvent) -> None:
         """Handles the randomize button click and plays a sound effect."""
         self.randomize_sound.play()  # Play the sound effect
-        self.form_groups(e)  # Call the original logic
+        self.form_groups()  # Removed 'e' parameter
 
     def copy_to_clipboard(self, e: ControlEvent) -> None:
         """Copy generated names to clipboard."""
@@ -484,36 +496,7 @@ class GroupFormationView(UserControl):
 
     # STRATING
     def _build_output_area(self) -> Container:
-        return Container(
-            content=Column(
-                [
-                    Row(  # Header row for "Generated Groups" and Copy button
-                        controls=[
-                            self.output_label,  # "Generated Groups" label
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    ),
-                    self.error_message_manual,
-                    Container(  # Scrollable section starts here
-                        content=Column(
-                            controls=[
-                                self.output_text,  # All groups will be inside this column
-                            ],
-                            spacing=20,
-                            scroll=ft.ScrollMode.AUTO,  # Enable scrolling here
-                            expand=True,
-                        ),
-                        expand=True,
-                        height=500,  # Adjust height as needed for scrolling  # Optional: Add border for clarity
-                    ),
-                ],
-                spacing=20,
-                alignment=ft.MainAxisAlignment.START,
-            ),
-            padding=20,
-            alignment=ft.alignment.top_left,
-            width=self.right_column_width,
-        )
+        return ui_helper.build_output_area(self)
 
     def addition_update_group_size_group_num(self, e):
         names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
@@ -591,188 +574,15 @@ class GroupFormationView(UserControl):
             e.control.error_text = "Must be a number"
             e.control.update()
 
-    def create_empty_group_boxes(self, num_groups):
-        self.output_text.content.controls.clear()  # Xóa các ô cũ
+    def create_empty_group_boxes(self, num_groups: int) -> None:
+        self.output_text.content.controls.clear()
 
         for i in range(1, num_groups + 1):
-            group_box = TextField(
-                label=f"Group {i}",
-                value="",  # Không có nội dung
-                multiline=True,
-                width=200,
-                height=100,
-                text_align=ft.TextAlign.LEFT,
-                border=ft.border.all(1, ft.colors.GREY_300),
-                disabled=(self.manual_group == "none"),  # Không cho phép chỉnh sửa
-            )
+            group_box = ui_helper.create_group_box(i, self.manual_group == "none")
             self.output_text.content.controls.append(group_box)
 
         self.output_text.update()
         self.output_area.update()
-
-    def form_groups(self, e):
-        # số lượng group và group size
-        try:
-            group_size = int(self.group_size_input.value or 0)
-            group_num = int(self.group_num_input.value or 0)
-
-        except ValueError:
-            return
-
-        # clean names
-        if self.selected_gender_filter == "none":
-            # Không lọc giới tính
-            names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
-            names_only = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
-        else:
-            # Lọc giới tính: trả về danh sách tuple (name, gender)
-            names_only = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
-            names = self.groupformer.get_cleaned_names(self.names_input.value, self.gender_input.value)
-
-        total_names = len(names)
-        if not names:
-            return
-
-        # xử lí số lượng giới tính
-        male_count = 0
-        female_count = 0
-        if self.selected_gender_filter == "male":
-            try:
-                male_count = int(self.male_count_input.value) if self.selected_gender_filter == "male" else 0
-            except ValueError:
-                male_count = 0
-        elif self.selected_gender_filter == "female":
-            try:
-                female_count = int(self.female_count_input.value) if self.selected_gender_filter == "female" else 0
-            except ValueError:
-                female_count = 0
-
-        # check thông báo không đủ nam/nữ:
-        if self.selected_gender_filter != "none":
-            total_male = len([name for name, gender in names if (gender == "male" or gender == "nam")])
-            total_female = len([name for name, gender in names if (gender == "female" or gender == "nữ")])
-
-            if total_male < male_count * group_num:
-                self.error_message.value = (
-                    f"Not enough males! Required: {male_count * group_num}, Available: {total_male}"
-                )
-                self.error_message.update()
-
-            if total_female < female_count * group_num:
-                self.error_message.value = (
-                    f"Not enough females! Required: {female_count * group_num}, Available: {total_female}"
-                )
-                self.error_message.update()
-            elif total_male >= male_count * group_num and total_female >= female_count * group_num:
-                self.error_message.value = ""
-        # Check thông báo nếu đủ giới tính
-        self.error_message.update()
-
-        # chia nhóm không có manual
-        if self.selected_gender_filter == "none" and self.manual_group == "none":
-            generated_groups = self.controller.form_groups(names, group_size, group_num)
-
-        elif self.selected_gender_filter != "none" and self.manual_group == "none":
-            generated_groups = self.groupformer.generate_names_with_gender(
-                names, male_count=male_count, female_count=female_count, group_size=group_size, num_groups=group_num
-            )
-
-        # chia nhóm có manual
-        elif self.manual_group != "none":
-            names_count = self.groupformer.counting_name(names_only=names_only)
-            # no gender
-            if self.existing_groups is None and self.selected_gender_filter == "none":
-                # print('is none')
-                group_size = (total_names + group_num - 1) // group_num
-                self.existing_groups = [[] for _ in range(group_num)]
-
-                manually_assigned = []
-                k = 0
-                for group_box in self.output_text.content.controls:
-                    # if not group_box.disabled:  # Nếu ô không bị disable, lấy tên nhập tay
-                    group_members = [n.strip() for n in group_box.value.splitlines() if n.strip()]
-                    self.existing_groups[k].extend(group_members)
-                    manually_assigned.extend(group_members)
-                    k += 1
-
-                self.manually_assigned = manually_assigned
-
-            # cập nhật names_count
-            for name in self.manually_assigned:
-                if name in names_count:
-                    # Giảm số lần xuất hiện của name trong names_count
-                    names_count[name] -= 1
-                    if names_count[name] <= 0:
-                        del names_count[name]
-
-            # số tên còn lại
-            remaining_names = []
-            if self.selected_gender_filter == "none":
-                for name, count in names_count.items():
-                    remaining_names.extend([name] * count)
-                generated_groups = self.groupformer.manual_group_without_gender(
-                    remaining_names=remaining_names,
-                    existing_group=self.existing_groups,
-                    group_size=group_size,
-                    num_groups=group_num,
-                )
-
-            # with gender
-            if self.existing_groups is None and self.selected_gender_filter != "none":
-                group_size = (total_names + group_num - 1) // group_num
-                self.existing_groups = [[] for _ in range(group_num)]
-
-                manually_assigned = []
-                k = 0
-
-                for group_box in self.output_text.content.controls:
-                    # if not group_box.disabled:  # Nếu ô không bị disable, lấy tên nhập tay
-                    group_memberss = [n.strip() for n in group_box.value.splitlines() if n.strip()]
-                    group_members = [
-                        (name, gender) for name, gender in names if name in group_memberss
-                    ]  # list các tuple(assigned_name, gender)
-                    self.existing_groups[k].extend(group_members)
-                    manually_assigned.extend(group_memberss)
-                    k += 1
-                self.manually_assigned = manually_assigned  # các tên đã được điền
-
-            elif self.selected_gender_filter != "none":
-                remaining_names = [(name, gender) for name, gender in names if name not in self.manually_assigned]
-                generated_groups = []
-                generated_groups = self.groupformer.manual_group_with_gender(
-                    remaining_names=remaining_names,
-                    existing_group=self.existing_groups,
-                    male_count=male_count,
-                    female_count=female_count,
-                    group_size=group_size,
-                    num_groups=group_num,
-                )
-
-        # STARTING
-        # Format output
-        self.output_text.content.controls.clear()
-        self.output_area.update()
-        self.output_text.update()
-        for i, group in enumerate(generated_groups, 1):
-            group_text = "\n".join([f"• {name}" for name in group])  # Create the text for the group
-
-            # Use a TextField to display the group information
-            group_box = TextField(
-                label=f"Group {i}",
-                value=f"{group_text}",  # Group name and members
-                multiline=True,  # Allow multiple lines
-                width=200,  # Adjust width of the TextField
-                # height=100,  # Adjust height of the TextField
-                text_align=ft.TextAlign.LEFT,  # Align text to the left
-                border=ft.border.all(1, ft.colors.GREY_300),  # Optional: Add border for styling
-                on_change=self.handle_name_input,
-            )
-            self.output_text.content.controls.append(group_box)
-
-        self.output_area.update()
-        self.output_text.update()
-        self.clear_result_button.disabled = False
-        self.clear_result_button.update()
 
     def show_draggable_cursor(self, e: ft.HoverEvent) -> None:
         """Show draggable cursor when hovering over the divider."""
@@ -813,3 +623,42 @@ class GroupFormationView(UserControl):
 
         except Exception as e:
             logger.error(f"Error populating list data: {e}")
+
+    def _update_ui_state(self):
+        """Update UI state after group formation"""
+        self.output_area.update()
+        self.output_text.update()
+        self.clear_result_button.disabled = False
+        self.clear_result_button.update()
+
+    def _build_input_row(self) -> Container:
+        """Build the initial input row before ui_helper builds the complete area"""
+        return Container(
+            content=self.input_row,  # Use the input_row we created in _setup_columns
+            expand=True,
+            padding=20,
+            alignment=ft.alignment.top_left,
+        )
+
+    def _handle_manual_input(self, e):
+        """Handle changes in the manual group input textfields."""
+        try:
+            # Get all current groups from the output text fields
+            current_groups = []
+            for text_field in self.output_text.content.controls:
+                if isinstance(text_field, ft.TextField):
+                    # Split the text into lines and clean them
+                    names = [name.strip() for name in text_field.value.split("\n") if name.strip()]
+                    current_groups.append(names)
+
+            # Store the current groups for later use
+            self.existing_groups = current_groups
+
+            # Update the error message if needed
+            self.error_message.value = ""
+            self.error_message.update()
+
+        except Exception as e:
+            self.error_message.value = str(e)
+            self.error_message.update()
+            logger.error(f"Error handling manual input: {e}")
