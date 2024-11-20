@@ -41,15 +41,11 @@ class EditListView(UserControl):
         self.has_unsaved_changes = False
         self.persistent_item_search = ""  # Add persistent search state
 
-        # Initialize items table
-        self.items_table = ft.DataTable(
-            columns=[
-                ft.DataColumn(ft.Text("Name")),
-                ft.DataColumn(ft.Text("Gender")),  # Optional column for gender
-                ft.DataColumn(ft.Text("Actions")),
-            ],
-            rows=[],  # Will be populated later
-        )
+        logger.info("Initializing EditListView")
+        self._init_components()
+
+        # Initialize and configure the items table first
+        self.items_table = None  # Remove initial DataTable creation
 
         # Initialize lists view
         self.available_lists = ListView(
@@ -57,9 +53,6 @@ class EditListView(UserControl):
             expand=True,
         )
         self._populate_available_lists()
-
-        logger.info("Initializing EditListView")
-        self._init_components()
 
         self.use_list_button = PopupMenuButton(
             content=IconButton(
@@ -99,6 +92,16 @@ class EditListView(UserControl):
     def build(self):
         """Build the edit list view"""
         logger.debug("Building EditListView")
+
+        # Initialize the DataTable here, before it's used
+        self.items_table = ft.DataTable(
+            columns=[
+                ft.DataColumn(ft.Text("Name")),
+                ft.DataColumn(ft.Text("Gender")),  # Optional column for gender
+                ft.DataColumn(ft.Text("Actions")),
+            ],
+            rows=[self._create_item_row(item) for item in self.filtered_items],
+        )
 
         # Left Column: Edit current list
         left_column = Column(
