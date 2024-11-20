@@ -1,5 +1,6 @@
 import flet as ft
 from model.user_authentication import UserAuthentication
+from model.list_model import ListModel
 from controller.user_authentication_controller import UserAuthenticationController
 from controller.name_generation_controller import NameGenerationController
 from controller.group_former_controller import GroupFormationController
@@ -40,21 +41,29 @@ class MainController:
             manage_lists_view = ManageListsView(self.page, self)
             self.view.handle_view_change(View.MANAGE_LISTS, manage_lists_view)
 
-    def navigate_to_edit_list(self, list_data: dict):
-        """Navigate to edit list view with selected list"""
+    def navigate_to_edit_list(self, list_data: ListModel | dict):
+        """Navigate to edit list view"""
         try:
+            logger.debug(f"Navigating to edit list with data type: {type(list_data)}")
+            # Ensure we have a ListModel
+            if isinstance(list_data, dict):
+                list_model = ListModel(list_data)
+            else:
+                list_model = list_data
+
+            logger.debug(f"List model created with name: {list_model.name}")
+
             if self.view:
                 # Set the selected list before navigation
-                self.list_controller.set_selected_list(list_data)
-                # Import here to avoid circular imports
+                self.list_controller.set_selected_list(list_model)
+
                 from ui.edit_list_view import EditListView
 
-                # Create the edit view first
-                edit_view = EditListView(self.page, self, list_data)
-                # Then handle navigation
+                edit_view = EditListView(self.page, self, list_model)
                 self.view.handle_view_change(View.EDIT_LIST, edit_view)
+
         except Exception as e:
-            logger.error(f"Error navigating to edit list: {e}")
+            logger.error(f"Error navigating to edit list: {e}", exc_info=True)
             self.page.show_snack_bar(ft.SnackBar(content=ft.Text("Error loading list for editing!")))
 
     def save_list(self, list_data: dict) -> bool:

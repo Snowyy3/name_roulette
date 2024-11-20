@@ -10,9 +10,13 @@ from flet import (
     GridView,
     IconButton,
     AlertDialog,
+    SnackBar,
+    ListTile,
+    Icon,
 )
 import uuid
 import logging
+from model.list_model import ListModel
 
 # Configure logging
 logging.basicConfig(
@@ -104,21 +108,21 @@ class ManageListsView(UserControl):
             expand=True,
         )
 
-    def _create_list_item(self, list_data: dict):
+    def _create_list_item(self, list_model: ListModel):
         """Create a single list item"""
         try:
             return Container(
                 content=Row([
-                    Text(list_data["name"], expand=True),
+                    Text(list_model.name, expand=True),
                     IconButton(
                         icon=ft.icons.MODE_EDIT_OUTLINED,
                         tooltip="Edit list",
-                        on_click=lambda e, id=list_data["id"]: self._handle_edit_list(id),
+                        on_click=lambda e, id=list_model.id: self._handle_edit_list(id),
                     ),
                     IconButton(
                         icon=ft.icons.DELETE_OUTLINED,
                         tooltip="Delete list",
-                        on_click=lambda e, id=list_data["id"]: self._handle_delete_list(id),
+                        on_click=lambda e, id=list_model.id: self._handle_delete_list(id),
                     ),
                 ]),
                 border=ft.border.all(1, ft.colors.OUTLINE),
@@ -127,7 +131,7 @@ class ManageListsView(UserControl):
             )
         except Exception as e:
             logger.error(f"Error creating list item: {e}")
-            return Container()
+            return Container(content=Text("Error displaying list item"), bgcolor=ft.colors.ERROR_CONTAINER)
 
     # Event Handlers
     def _handle_search(self, e):
@@ -150,19 +154,21 @@ class ManageListsView(UserControl):
         """Handle edit list button click"""
         logger.info(f"Attempting to edit list {list_id}")
         try:
-            # Find the list data from our local lists_data first
-            selected_list = next((lst for lst in self.lists_data if lst["id"] == list_id), None)
+            # Find the list from our local lists_data using property access
+            selected_list = next((lst for lst in self.lists_data if lst.id == list_id), None)
 
             if selected_list is not None:
-                # Navigate to edit view with the selected list data
-                self.controller.navigate_to_edit_list(selected_list)  # Pass the list_data dictionary
+                # Pass the ListModel directly to the edit view
+                self.controller.navigate_to_edit_list(selected_list)
             else:
                 logger.warning(f"List {list_id} not found in local data")
-                self.page.show_snack_bar(ft.SnackBar(content=Text("List not found!")))
+                self.page.show_snack_bar(ft.SnackBar(content=Text("List not found!"), bgcolor=ft.colors.ERROR))
 
         except Exception as e:
             logger.error(f"Error editing list: {e}")
-            self.page.show_snack_bar(ft.SnackBar(content=Text("Error loading list for editing!")))
+            self.page.show_snack_bar(
+                ft.SnackBar(content=Text("Error loading list for editing!"), bgcolor=ft.colors.ERROR)
+            )
 
     def _handle_delete_list(self, list_id: str):
         """Handle delete list button click"""
@@ -174,17 +180,20 @@ class ManageListsView(UserControl):
             self.page.update()
 
         def confirm_delete(e):
-            if self.controller.delete_list(list_id):
+            if self.controller.list_controller.delete_list(list_id):
                 self.lists_data = self.controller.list_controller.get_all_lists()
                 self.filter_lists(self.search_query)
                 self._update_list_grid()
-                self.page.show_snack_bar(ft.SnackBar(content=Text("List deleted successfully!")))
+                self.page.show_snack_bar(
+                    SnackBar(content=Text("List deleted successfully!"), bgcolor=ft.colors.SUCCESS)
+                )
             else:
-                self.page.show_snack_bar(ft.SnackBar(content=Text("Error deleting list!")))
+                self.page.show_snack_bar(SnackBar(content=Text("Error deleting list!"), bgcolor=ft.colors.ERROR))
             close_dialog(e)
 
         try:
-            list_name = next(lst["name"] for lst in self.lists_data if lst["id"] == list_id)
+            # Get list name using ListModel property
+            list_name = next(lst.name for lst in self.lists_data if lst.id == list_id)
             dialog = AlertDialog(
                 title=Text("Confirm Delete"),
                 content=Text(f"Are you sure you want to delete '{list_name}'?"),
@@ -198,7 +207,7 @@ class ManageListsView(UserControl):
             self.page.update()
         except Exception as e:
             logger.error(f"Error showing delete dialog: {e}")
-            self.page.show_snack_bar(ft.SnackBar(content=Text("Error showing delete dialog!")))
+            self.page.show_snack_bar(SnackBar(content=Text("Error showing delete dialog!"), bgcolor=ft.colors.ERROR))
 
     def _load_lists(self):
         """Load lists from controller"""
@@ -210,17 +219,18 @@ class ManageListsView(UserControl):
         logger.info(f"Loaded {len(self.lists_data)} lists")
 
     def filter_lists(self, query: str):
-        """Filter lists based on search query"""
+        """Filter lists with error handling"""
         try:
             if not query:
-                self.filtered_lists = self.lists_data.copy()
+                self.filtered_lists = self.lists_data
             else:
                 query = query.lower()
-                self.filtered_lists = [lst for lst in self.lists_data if query in lst["name"].lower()]
-            logger.debug(f"Filtered lists to {len(self.filtered_lists)} results")
+                self.filtered_lists = [lst for lst in self.lists_data if query in lst.name.lower()]
+            self._update_list_grid()
         except Exception as e:
             logger.error(f"Error filtering lists: {e}")
             self.filtered_lists = []
+            self._update_list_grid()
 
     def _update_list_grid(self):
         """Update the grid view with filtered lists"""
@@ -242,24 +252,19 @@ class ManageListsView(UserControl):
         self.search_field.update()
 
     def _handle_add_list(self, e):
-        """Handle creating a new list"""
-        logger.debug("Creating new list")
+        """Handle creating a new list with validation"""
         try:
-            new_list = {
-                "id": str(uuid.uuid4()),
-                "name": "New List",
-                "items": [],
-            }
-            # Save first, then navigate only if successful
+            new_list = ListModel({"name": "New List", "items": []})
+
             if self.controller.list_controller.save_list(new_list):
                 self.controller.navigate_to_edit_list(new_list)
-                # Refresh the list view
                 self._load_lists()
             else:
-                self.page.show_snack_bar(ft.SnackBar(content=Text("Error creating new list!")))
+                raise Exception("Failed to save new list")
+
         except Exception as e:
             logger.error(f"Error creating new list: {e}")
-            self.page.show_snack_bar(ft.SnackBar(content=Text("Error creating new list!")))
+            self.page.show_snack_bar(SnackBar(content=Text("Error creating new list"), bgcolor=ft.colors.ERROR))
 
     def refresh_lists(self):
         """Refresh the lists display"""
@@ -274,3 +279,14 @@ class ManageListsView(UserControl):
         self._load_lists()
         self._update_list_grid()
         super().did_mount()
+
+    def _populate_available_lists(self):
+        """Populate the available lists view"""
+        self.available_lists.controls = [
+            ListTile(
+                title=Text(lst.name),  # Use property access instead of dict access
+                leading=Icon(ft.icons.LIST_ALT),
+                on_click=lambda e, id=lst.id: self._handle_list_select(id),
+            )
+            for lst in self.controller.list_controller.get_all_lists()
+        ]

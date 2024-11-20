@@ -22,20 +22,27 @@ from flet import (
 )
 from ui.views import View
 import logging
+from model.list_model import ListModel
+
+from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class EditListView(UserControl):
-    def __init__(self, page: Page, controller, list_data: dict) -> None:
+    def __init__(self, page: Page, controller, list_data: dict | ListModel) -> None:
         super().__init__()
         self.page = page
         self.controller = controller
-        self.list_data = list_data
-        self.original_data = dict(list_data)  # Store original data for comparison
+        # Ensure we handle both dict and ListModel inputs
+        if isinstance(list_data, dict):
+            self.list_model = ListModel(list_data)
+        else:
+            self.list_model = list_data
+        self.original_model = ListModel(self.list_model.to_dict())
 
         # State Management
-        self.filtered_items = list_data.get("items", []).copy()
+        self.filtered_items = self.list_model.items.copy()
         self.item_search_query = ""
         self.is_editing = False
         self.has_unsaved_changes = False
@@ -75,9 +82,13 @@ class EditListView(UserControl):
         """Initialize components for List Details"""
         self.list_name_field = TextField(
             label="List Name",
-            value=self.list_data["name"],
+            value=self.list_model.name,
             expand=True,
             on_change=self._handle_name_change,  # Update change handler
+            hint_text="Enter list name",
+            helper_text="Name cannot be empty",
+            error_text="Name cannot be empty",
+            on_submit=self._validate_name,
         )
         self.item_search_field = TextField(
             prefix_icon=ft.icons.SEARCH,
@@ -93,71 +104,13 @@ class EditListView(UserControl):
         """Build the edit list view"""
         logger.debug("Building EditListView")
 
-        # Initialize the DataTable here, before it's used
-        self.items_table = ft.DataTable(
-            columns=[
-                ft.DataColumn(ft.Text("Name")),
-                ft.DataColumn(ft.Text("Gender")),  # Optional column for gender
-                ft.DataColumn(ft.Text("Actions")),
-            ],
-            rows=[self._create_item_row(item) for item in self.filtered_items],
-        )
-
-        # Left Column: Edit current list
-        left_column = Column(
-            controls=[
-                Row([
-                    self.list_name_field,
-                    self.use_list_button,
-                    IconButton(icon=ft.icons.SAVE, tooltip="Save changes", on_click=self._handle_save),
-                ]),
-                ft.Divider(height=1, color=ft.colors.OUTLINE),
-                Row([
-                    self.item_search_field,
-                    IconButton(icon=ft.icons.ADD, tooltip="Add item", on_click=self._handle_add_item),
-                ]),
-                Container(
-                    content=self.items_table,
-                    expand=True,
-                ),
-            ],
-            expand=True,
-        )
-
-        # Right Column: Available lists
-        available_lists = self._create_available_lists_view()
-        right_column = Column(
-            controls=[
-                TextField(
-                    prefix_icon=ft.icons.SEARCH,
-                    hint_text="Search available lists...",
-                    on_change=self._handle_list_search,
-                    expand=True,
-                ),
-                Container(
-                    content=available_lists,
-                    expand=True,
-                    margin=ft.margin.only(top=10),
-                ),
-            ],
-            expand=True,
-        )
-
-        # Main layout with two columns
+        self._init_items_table()
         return Container(
             content=Row(
                 controls=[
-                    Container(
-                        content=left_column,
-                        expand=6,  # Takes 60% of space
-                        margin=ft.margin.only(right=10),
-                    ),
+                    self._build_left_column(),
                     ft.VerticalDivider(width=1, color=ft.colors.OUTLINE),
-                    Container(
-                        content=right_column,
-                        expand=4,  # Takes 40% of space
-                        margin=ft.margin.only(left=10),
-                    ),
+                    self._build_right_column(),
                 ],
                 expand=True,
             ),
@@ -165,32 +118,109 @@ class EditListView(UserControl):
             expand=True,
         )
 
+    def _init_items_table(self):
+        """Initialize the items table"""
+        self.items_table = ft.DataTable(
+            columns=[
+                ft.DataColumn(ft.Text("Name")),
+                ft.DataColumn(ft.Text("Gender")),
+                ft.DataColumn(ft.Text("Actions")),
+            ],
+            rows=self._get_filtered_item_rows(),
+        )
+
+    def _build_left_column(self):
+        """Build the left column containing list editing controls"""
+        return Container(
+            content=Column(
+                controls=[
+                    self._build_header_row(),
+                    ft.Divider(height=1, color=ft.colors.OUTLINE),
+                    self._build_search_row(),
+                    Container(content=self.items_table, expand=True),
+                ],
+                expand=True,
+            ),
+            expand=6,
+            margin=ft.margin.only(right=10),
+        )
+
+    def _build_header_row(self):
+        """Build the header row with name field and actions"""
+        return Row([
+            self.list_name_field,
+            self.use_list_button,
+            IconButton(icon=ft.icons.SAVE, tooltip="Save changes", on_click=self._handle_save),
+        ])
+
+    def _build_search_row(self):
+        """Build the search row with search field and add button"""
+        return Row([
+            self.item_search_field,
+            IconButton(icon=ft.icons.ADD, tooltip="Add item", on_click=self._handle_add_item),
+        ])
+
+    def _build_right_column(self):
+        """Build the right column containing available lists"""
+        return Container(
+            content=Column(
+                controls=[
+                    self._build_list_search_field(),
+                    Container(
+                        content=self.available_lists,
+                        expand=True,
+                        margin=ft.margin.only(top=10),
+                    ),
+                ],
+                expand=True,
+            ),
+            expand=4,
+            margin=ft.margin.only(left=10),
+        )
+
+    def _build_list_search_field(self):
+        """Build the search field for available lists"""
+        return TextField(
+            prefix_icon=ft.icons.SEARCH,
+            hint_text="Search available lists...",
+            on_change=self._handle_list_search,
+            expand=True,
+        )
+
+    def _get_filtered_item_rows(self):
+        """Get filtered item rows for the table"""
+        filtered = self.filtered_items
+        if self.persistent_item_search:
+            filtered = [item for item in self.filtered_items if self.persistent_item_search in item["name"].lower()]
+        return [self._create_item_row(item) for item in filtered]
+
     def _create_available_lists_view(self):
         """Create the available lists view"""
         return self.available_lists
 
     def _populate_available_lists(self):
         """Populate the available lists view"""
+        available_lists = self.controller.list_controller.get_all_lists()
         self.available_lists.controls = [
             ListTile(
-                title=Text(lst["name"]),
+                title=Text(lst.name),  # Use property access
                 leading=Icon(ft.icons.LIST_ALT),
-                on_click=lambda e, id=lst["id"]: self._handle_list_select(id),
+                on_click=lambda e, id=lst.id: self._handle_list_select(id),
             )
-            for lst in self.controller.list_controller.get_all_lists()
+            for lst in available_lists
         ]
 
     def _handle_list_search(self, e):
         """Handle searching through available lists"""
         query = e.control.value.lower()
         all_lists = self.controller.list_controller.get_all_lists()
-        filtered_lists = [lst for lst in all_lists if query in lst["name"].lower()]
+        filtered_lists = [lst for lst in all_lists if query in lst.name.lower()]  # Use property access
 
         self.available_lists.controls = [
             ListTile(
-                title=Text(lst["name"]),
+                title=Text(lst.name),  # Use property access
                 leading=Icon(ft.icons.LIST_ALT),
-                on_click=lambda e, id=lst["id"]: self._handle_list_select(id),
+                on_click=lambda e, id=lst.id: self._handle_list_select(id),  # Use property access
             )
             for lst in filtered_lists
         ]
@@ -207,10 +237,10 @@ class EditListView(UserControl):
         """Load the selected list data"""
         selected_list = self.controller.list_controller.get_list(list_id)
         if selected_list:
-            self.list_data = dict(selected_list)
-            self.original_data = dict(selected_list)
-            self.list_name_field.value = selected_list["name"]
-            self.filtered_items = selected_list.get("items", []).copy()
+            self.list_model = selected_list  # It's already a ListModel, no need to convert
+            self.original_model = ListModel(selected_list.to_dict())
+            self.list_name_field.value = selected_list.name  # Use property access
+            self.filtered_items = selected_list.items  # Reference items directly
             self.has_unsaved_changes = False
             self._update_items_table()
             self.list_name_field.update()
@@ -219,9 +249,8 @@ class EditListView(UserControl):
         """Create a row for the items table with optional fields"""
         return DataRow(
             cells=[
-                DataCell(Text(item["name"])),
-                # Only show gender if it exists
-                DataCell(Text(item.get("gender", ""))) if "gender" in item else DataCell(Text("")),
+                DataCell(Text(item.get("name", ""))),  # Use get() for safety
+                DataCell(Text(item.get("gender", ""))),  # Use get() for safety
                 DataCell(
                     Row([
                         IconButton(
@@ -247,40 +276,37 @@ class EditListView(UserControl):
             self.controller.navigate_to_manage_lists()
 
     def _handle_save(self, e) -> bool:
-        """Handle save operation and return success status"""
+        """Handle save operation with validation"""
         try:
-            self.list_data["name"] = self.list_name_field.value
-            self.list_data["items"] = self.filtered_items
-
-            if self.controller.save_list(self.list_data):
-                self.has_unsaved_changes = False
-                self.original_data = dict(self.list_data)
-                self.page.show_snack_bar(ft.SnackBar(content=Text("Changes saved successfully!")))
-                return True
-            else:
-                self.page.show_snack_bar(ft.SnackBar(content=Text("Error saving changes!")))
+            is_valid, error = self.controller.validate_list(self.list_model)
+            if not is_valid:
+                self.page.show_snack_bar(SnackBar(content=Text(error), bgcolor=ft.colors.ERROR))
                 return False
+
+            if self.controller.save_list(self.list_model):
+                self.has_unsaved_changes = False
+                self.original_model = ListModel(self.list_model.to_dict())
+                self.page.show_snack_bar(
+                    SnackBar(content=Text("Changes saved successfully!"), bgcolor=ft.colors.SUCCESS)
+                )
+                return True
+            return False
         except Exception as e:
-            logger.error(f"Error saving list: {e}")
-            self.page.show_snack_bar(ft.SnackBar(content=Text("Error saving changes!")))
+            self._handle_error("Error saving list", e)
             return False
 
     def _handle_use_list(self, target_view: View):
         """Handle using the list in different views"""
-        try:
-            if self.has_unsaved_changes:
-                self._show_unsaved_changes_dialog(lambda: self._use_list_in_view(target_view))
-            else:
-                self._use_list_in_view(target_view)
-        except Exception as e:
-            logger.error(f"Error using list: {e}")
-            self.page.show_snack_bar(SnackBar(content=Text("Error using list!"), bgcolor="#ef4444"))
+        if self.has_unsaved_changes:
+            self._show_unsaved_changes_dialog(lambda: self._use_list_in_view(target_view))
+        else:
+            self._use_list_in_view(target_view)
 
     def _use_list_in_view(self, target_view: View):
         """Use the list in the specified view"""
         try:
             # Save current list state to controller
-            self.controller.set_active_list(self.list_data)
+            self.controller.set_active_list(self.list_model)
 
             # Navigate to target view using controller
             if target_view == View.NAME_PICKER:
@@ -326,152 +352,251 @@ class EditListView(UserControl):
             self.has_unsaved_changes = True
             logger.debug("Marked list as having unsaved changes")
 
-    def _show_unsaved_changes_dialog(self, on_confirm):
-        """Show enhanced dialog for unsaved changes with save option"""
-
-        def close_dialog(e):
+    def show_confirmation_dialog(
+        self,
+        title: str,
+        content: str,
+        on_confirm: Callable,
+        on_cancel: Optional[Callable] = None,
+        confirm_text: str = "Confirm",
+        cancel_text: str = "Cancel",
+        is_destructive: bool = False,
+    ):
+        def handle_cancel(e):
             dialog.open = False
             self.page.update()
+            if on_cancel:
+                on_cancel()
 
-        def discard_changes(e):
-            close_dialog(e)
+        def handle_confirm(e):
+            dialog.open = False
+            self.page.update()
             on_confirm()
 
-        def save_and_continue(e):
-            if self._handle_save():
-                close_dialog(e)
-                on_confirm()
-
-        dialog = AlertDialog(
-            title=Text("Unsaved Changes"),
-            content=Text("You have unsaved changes. What would you like to do?"),
+        dialog = ft.AlertDialog(
+            title=ft.Text(title),
+            content=ft.Text(content),
             actions=[
-                ft.TextButton("Cancel", on_click=close_dialog),
-                ft.TextButton("Discard", on_click=discard_changes),
+                ft.TextButton(cancel_text, on_click=handle_cancel),
+                ft.TextButton(
+                    confirm_text,
+                    on_click=handle_confirm,
+                    style=ft.ButtonStyle(color=ft.colors.ERROR if is_destructive else ft.colors.PRIMARY),
+                ),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
+        self.page.dialog = dialog
+        dialog.open = True
+        self.page.update()
+
+    def show_unsaved_changes_dialog(
+        self, on_save: Callable, on_discard: Callable, on_cancel: Optional[Callable] = None
+    ):
+        def handle_save(e):
+            if on_save():
+                dialog.open = False
+                self.page.update()
+
+        def handle_discard(e):
+            dialog.open = False
+            self.page.update()
+            on_discard()
+
+        def handle_cancel(e):
+            dialog.open = False
+            self.page.update()
+            if on_cancel:
+                on_cancel()
+
+        dialog = ft.AlertDialog(
+            title=ft.Text("Unsaved Changes"),
+            content=ft.Text("You have unsaved changes. What would you like to do?"),
+            actions=[
+                ft.TextButton("Cancel", on_click=handle_cancel),
+                ft.TextButton("Discard", on_click=handle_discard),
                 ft.TextButton(
                     "Save",
-                    on_click=save_and_continue,
+                    on_click=handle_save,
                     style=ft.ButtonStyle(color=ft.colors.PRIMARY),
                 ),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
+
         self.page.dialog = dialog
         dialog.open = True
         self.page.update()
 
+    def _show_unsaved_changes_dialog(self, on_confirm):
+        """Show dialog for unsaved changes"""
+        self.show_unsaved_changes_dialog(lambda: self._handle_save(None), on_confirm)
+
     def _handle_add_item(self, e):
         """Handle adding a new item"""
-        try:
-            new_item = {
-                "name": "",  # Empty name for editing
-                "id": str(len(self.filtered_items) + 1),  # Simple ID generation
-            }
+        success, new_item, error = self.controller.add_item_to_list(self.list_model, "")
+        if success:
             self.filtered_items.append(new_item)
             self._check_for_changes()
             self._update_items_table()
-        except Exception as e:
-            logger.error(f"Error adding item: {e}")
-            self.page.show_snack_bar(ft.SnackBar(content=Text("Error adding item!")))
+            self._handle_edit_item(new_item)
+        else:
+            self._handle_error("Error adding item", Exception(error))
 
     def _handle_edit_item(self, item):
-        """Handle editing an item with optional fields"""
+        """Handle editing an item with validation"""
         try:
-
-            def close_dialog(e):
-                dialog.open = False
-                self.page.update()
-
-            def save_changes(e):
-                try:
-                    item["name"] = name_field.value.strip()
-                    if gender_field.value.strip():  # Only save gender if provided
-                        item["gender"] = gender_field.value.strip()
-                    self._check_for_changes()  # Check for changes after edit
-                    self._update_items_table()
-                    close_dialog(e)
-                except Exception as e:
-                    logger.error(f"Error saving item changes: {e}")
-                    self.page.show_snack_bar(ft.SnackBar(content=Text("Error saving changes!")))
-
             name_field = TextField(
                 label="Name",
-                value=item["name"],
+                value=item.get("name", ""),  # Use get() for safety
                 autofocus=True,
             )
-
             gender_field = TextField(
                 label="Gender (optional)",
-                value=item.get("gender", ""),
+                value=item.get("gender", ""),  # Use get() for safety
             )
+
+            def save_changes(e):
+                success, error = self.controller.update_item_in_list(
+                    self.list_model,
+                    item.get("id", ""),  # Use get() for safety
+                    name_field.value.strip(),
+                    gender_field.value.strip() or None,
+                )
+                if success:
+                    self._check_for_changes()
+                    self._update_items_table()
+                    self._close_dialog(e)
+                else:
+                    name_field.error_text = error
+                    name_field.update()
 
             dialog = AlertDialog(
                 title=Text("Edit Item"),
                 content=Column([name_field, gender_field], tight=True),
                 actions=[
-                    ft.TextButton("Cancel", on_click=close_dialog),
+                    ft.TextButton("Cancel", on_click=self._close_dialog),
                     ft.TextButton("Save", on_click=save_changes),
                 ],
             )
-
-            self.page.dialog = dialog
-            dialog.open = True
-            self.page.update()
+            self._show_dialog(dialog)
 
         except Exception as e:
-            logger.error(f"Error showing edit dialog: {e}")
-            self.page.show_snack_bar(ft.SnackBar(content=Text("Error editing item!")))
+            self._handle_error("Error editing item", e)
+
+    def _create_edit_item_dialog(self, item):
+        """Create the edit item dialog"""
+        name_field = TextField(
+            label="Name",
+            value=item["name"],
+            autofocus=True,
+        )
+        gender_field = TextField(
+            label="Gender (optional)",
+            value=item.get("gender", ""),
+        )
+
+        def save_changes(e):
+            if self._validate_and_save_item(item, name_field, gender_field):
+                self._close_dialog(e)
+
+        return AlertDialog(
+            title=Text("Edit Item"),
+            content=Column([name_field, gender_field], tight=True),
+            actions=[
+                ft.TextButton("Cancel", on_click=self._close_dialog),
+                ft.TextButton("Save", on_click=save_changes),
+            ],
+        )
+
+    def _validate_and_save_item(self, item, name_field, gender_field):
+        """Validate and save item changes"""
+        name = name_field.value.strip()
+        is_valid, error_msg = self._validate_item(name)
+
+        if not is_valid:
+            name_field.error_text = error_msg
+            name_field.update()
+            return False
+
+        try:
+            self._update_item(item, name, gender_field.value.strip())
+            self._check_for_changes()
+            self._update_items_table()
+            return True
+        except Exception as e:
+            self._handle_error("Error saving item changes", e)
+            return False
+
+    def _update_item(self, item, name, gender):
+        """Update item with new values"""
+        item["name"] = name
+        if gender:
+            item["gender"] = gender
+        elif "gender" in item:
+            del item["gender"]
+
+    def _handle_error(self, message: str, error: Exception):
+        """Handle errors uniformly"""
+        logger.error(f"{message}: {error}")
+        self.page.show_snack_bar(SnackBar(content=Text(f"{message}!"), bgcolor=ft.colors.ERROR))
+
+    def _show_dialog(self, dialog):
+        """Show a dialog"""
+        self.page.dialog = dialog
+        dialog.open = True
+        self.page.update()
+
+    def _close_dialog(self, e=None):
+        """Close the current dialog"""
+        if self.page.dialog:
+            self.page.dialog.open = False
+            self.page.update()
 
     def _handle_delete_item(self, item):
         """Handle deleting an item"""
-        try:
 
-            def close_dialog(e):
-                dialog.open = False
-                self.page.update()
+        def confirm_delete():
+            success, error = self.controller.delete_item_from_list(self.list_model, item["id"])
+            if success:
+                self.filtered_items.remove(item)
+                self._check_for_changes()
+                self._update_items_table()
+            else:
+                self._handle_error("Error deleting item", Exception(error))
 
-            def confirm_delete(e):
-                try:
-                    self.filtered_items.remove(item)
-                    self._check_for_changes()  # Check for changes after delete
-                    self._update_items_table()
-                    close_dialog(e)
-                except Exception as e:
-                    logger.error(f"Error deleting item: {e}")
-                    self.page.show_snack_bar(ft.SnackBar(content=Text("Error deleting item!")))
-
-            dialog = AlertDialog(
-                title=Text("Confirm Delete"),
-                content=Text(f"Are you sure you want to delete '{item['name']}'?"),
-                actions=[
-                    ft.TextButton("Cancel", on_click=close_dialog),
-                    ft.TextButton("Delete", on_click=confirm_delete, style=ft.ButtonStyle(color=ft.colors.ERROR)),
-                ],
-            )
-
-            self.page.dialog = dialog
-            dialog.open = True
-            self.page.update()
-
-        except Exception as e:
-            logger.error(f"Error showing delete dialog: {e}")
-            self.page.show_snack_bar(ft.SnackBar(content=Text("Error deleting item!")))
+        self.show_confirmation_dialog(
+            "Confirm Delete",
+            f"Are you sure you want to delete '{item['name']}'?",
+            confirm_delete,
+            is_destructive=True,
+        )
 
     def _handle_name_change(self, e):
         """Handle list name changes"""
-        self.list_data["name"] = e.control.value
+        self.list_model.name = e.control.value
         self._check_for_changes()
 
     def _check_for_changes(self):
         """Check if current data differs from original data"""
         try:
-            current_state = {"name": self.list_data["name"], "items": self.filtered_items}
-            original_state = {"name": self.original_data["name"], "items": self.original_data["items"]}
-            self.has_unsaved_changes = (
-                current_state["name"] != original_state["name"]
-                or len(current_state["items"]) != len(original_state["items"])
-                or any(i1 != i2 for i1, i2 in zip(current_state["items"], original_state["items"]))
-            )
+            self.has_unsaved_changes = not self.list_model.equals(self.original_model)
             logger.debug(f"Unsaved changes: {self.has_unsaved_changes}")
         except Exception as e:
             logger.error(f"Error checking for changes: {e}")
+            self.has_unsaved_changes = True  # Assume changes on error
+
+    def _validate_name(self, e=None) -> bool:
+        """Validate list name using controller"""
+        name = self.list_name_field.value.strip()
+        is_valid, error = self.controller.validate_item(name)
+
+        if not is_valid:
+            self.list_name_field.error_text = error
+            self.list_name_field.update()
+            return False
+
+        self.list_name_field.error_text = None
+        self.list_name_field.update()
+        return True
