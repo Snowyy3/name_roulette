@@ -84,10 +84,10 @@ class EditListView(UserControl):
             label="List Name",
             value=self.list_model.name,
             expand=True,
-            on_change=self._handle_name_change,  # Update change handler
+            on_change=self._handle_name_change,
             hint_text="Enter list name",
             helper_text="Name cannot be empty",
-            error_text="Name cannot be empty",
+            # Remove error_text from here - it should only be set when validation fails
             on_submit=self._validate_name,
         )
         self.item_search_field = TextField(
@@ -590,13 +590,12 @@ class EditListView(UserControl):
     def _validate_name(self, e=None) -> bool:
         """Validate list name using controller"""
         name = self.list_name_field.value.strip()
-        is_valid, error = self.controller.validate_item(name)
 
-        if not is_valid:
-            self.list_name_field.error_text = error
+        if not name:
+            self.list_name_field.error_text = "Name cannot be empty"
             self.list_name_field.update()
             return False
-
-        self.list_name_field.error_text = None
-        self.list_name_field.update()
-        return True
+        else:
+            self.list_name_field.error_text = None  # Clear error when name is not empty
+            self.list_name_field.update()
+            return True
