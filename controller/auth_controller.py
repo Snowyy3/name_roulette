@@ -14,12 +14,6 @@ class ListController:
         logger.info("Initializing ListController")
         self._load_lists()
 
-    def handle_user_change(self):
-        """Refresh lists when user changes"""
-        logger.info("Refreshing lists due to user change")
-        self.selected_list = None  # Clear selected list
-        self._load_lists()  # Reload lists for new user
-
     def _get_current_username(self) -> str:
         """Get current username or 'guest' if not logged in"""
         if self.auth and self.auth.current_user:
@@ -33,19 +27,13 @@ class ListController:
                 data = json.load(file)
 
             username = self._get_current_username()
-
-            # Clear existing lists
-            self.lists = []
-
             if username == "guest":
                 user_lists = data.get("guest", {}).get("lists", {})
             else:
-                # For logged-in users, get from users section
                 user_lists = data.get("users", {}).get(username, {}).get("lists", {})
-                if not user_lists:
-                    logger.warning(f"No lists found for user {username}")
 
-            # Convert from dict to list format
+            # Convert from dict to list format and ensure all required fields
+            self.lists = []
             for list_id, list_data in user_lists.items():
                 self.lists.append({
                     "id": list_id,
@@ -166,3 +154,7 @@ class ListController:
     def get_selected_list(self) -> Optional[Dict]:
         """Get the currently selected list"""
         return self.selected_list
+
+    def handle_user_change(self):
+        """Handle user change and reload lists"""
+        self._load_lists()

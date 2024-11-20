@@ -13,19 +13,18 @@ logger = logging.getLogger(__name__)
 class MainController:
     def __init__(self, page: ft.Page):
         self.page = page
+        self.view = None
 
         self.name_generation = NameGenerationController()
         self.group_formation = GroupFormationController()
 
         # Create a single UserAuthentication instance
-        # Since if not, 2 instances = change password/forgot password are out of sync and won't work
         self.user_auth = UserAuthentication()
 
-        # Initialize controllers with shared UserAuthentication instance
+        # Initialize controllers in correct order with proper references
         self.auth = UserAuthenticationController(page, auth=self.user_auth)
-
         self.list_controller = ListController(self.auth)
-        self.view = None  # Store reference to MainView
+        self.auth.set_list_controller(self.list_controller)
 
     def set_main_view(self, view):
         """Set reference to MainView for navigation"""
@@ -34,7 +33,12 @@ class MainController:
     def navigate_to_manage_lists(self):
         """Navigate to manage lists view"""
         if self.view:
-            self.view.handle_view_change(View.MANAGE_LISTS)
+            # Import here to avoid circular imports
+            from ui.manage_lists_view import ManageListsView
+
+            # Create fresh instance of ManageListsView
+            manage_lists_view = ManageListsView(self.page, self)
+            self.view.handle_view_change(View.MANAGE_LISTS, manage_lists_view)
 
     def navigate_to_edit_list(self, list_data: dict):
         """Navigate to edit list view with selected list"""

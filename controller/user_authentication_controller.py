@@ -8,17 +8,26 @@ class UserAuthenticationController:
         self.auth = auth  # Use the shared instance
         self.current_user = None
         self.validation = ValidationService()
+        self.list_controller = None  # Add reference to ListController
+
+    def set_list_controller(self, list_controller):
+        """Set the list controller reference"""
+        self.list_controller = list_controller
 
     def handle_login(self, username: str, password: str) -> bool:
         """Handle login attempt"""
         if username is None and password is None:
             # Guest login
             self.current_user = {"display_name": "Guest", "username": None}
+            if self.list_controller:
+                self.list_controller.handle_user_change()
             return True
 
         if self.auth.verify_password(username, password):
             display_name = self.auth.get_display_name(username)
             self.current_user = {"display_name": display_name, "username": username}
+            if self.list_controller:
+                self.list_controller.handle_user_change()
             return True
         return False
 
@@ -33,6 +42,8 @@ class UserAuthenticationController:
     def handle_logout(self):
         """Handle logout"""
         self.current_user = None
+        if self.list_controller:
+            self.list_controller.handle_user_change()
 
     def is_authenticated(self) -> bool:
         """Check if user is authenticated"""

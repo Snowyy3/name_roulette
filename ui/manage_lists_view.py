@@ -203,10 +203,11 @@ class ManageListsView(UserControl):
     def _load_lists(self):
         """Load lists from controller"""
         logger.debug("Loading lists")
+        # Force reload from controller
+        self.controller.list_controller._load_lists()
         self.lists_data = self.controller.list_controller.get_all_lists()
         self.filtered_lists = self.lists_data.copy()
         logger.info(f"Loaded {len(self.lists_data)} lists")
-        # Removed grid update from here since grid isn't created yet
 
     def filter_lists(self, query: str):
         """Filter lists based on search query"""
@@ -259,3 +260,17 @@ class ManageListsView(UserControl):
         except Exception as e:
             logger.error(f"Error creating new list: {e}")
             self.page.show_snack_bar(ft.SnackBar(content=Text("Error creating new list!")))
+
+    def refresh_lists(self):
+        """Refresh the lists display"""
+        logger.info("Refreshing lists view")
+        self._load_lists()
+        self.filter_lists(self.search_query)
+        self._update_list_grid()
+
+    def did_mount(self):
+        """Called when view is mounted"""
+        logger.info("ManageListsView mounted")
+        self._load_lists()
+        self._update_list_grid()
+        super().did_mount()

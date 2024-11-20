@@ -151,11 +151,14 @@ class MainView(UserControl):
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
-    def handle_view_change(self, view: View, pre_created_view=None):
-        """Handle view changes by updating the AppBar title and content area."""
+    def handle_view_change(self, view: View, view_instance=None):
+        """Handle changing views"""
+        if view == View.MANAGE_LISTS and view_instance:
+            # Use the provided fresh instance
+            self.manage_lists_view = view_instance
         self._update_previous_view(view)
         self._update_appbar(view)
-        self._update_content_area(view, pre_created_view)
+        self._update_content_area(view, view_instance)
 
     def _update_previous_view(self, view: View):
         if self.current_view not in [View.LOGIN, View.SIGNUP] or view not in [View.LOGIN, View.SIGNUP]:
