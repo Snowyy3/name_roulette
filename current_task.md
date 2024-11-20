@@ -1,88 +1,67 @@
-#### 3.2 Screen 2 Events
+# Current Task Summary
 
-- **Use Icon Click**:
-  - Placeholder for future functionality to use the selected list in the name picker view.
-- **Save Icon Click**:
-  - Save any edits made to the list items.
-  - Provide visual feedback or a message indicating success.
-- **Delete Icon Click**:
-  - Show a confirmation dialog before deleting the list.
-  - Remain on Screen 2 after deletion and clear the list details.
-- **Search Input Change**:
-  - Filter the items in the list based on the search query.
-- **Input Field Changes**:
-  - Update the state when any of the ID, Name, or Gender fields are modified.
-- **Back Button Click**:
-  - Navigate back to `ManageListsView` using the controller.
-  - Handle any unsaved changes before navigating.
-- **Header Icon Click**:
-  - Ensure header icons have event handlers that are functional within `EditListView`.
-  - Update the navigation logic to allow view changes from within `EditListView`.
-- **Implement Two-Column Layout in Edit List View**: (2 columns separated by a thin line)
-  - **Left Column**: Editing the currently selected list.
-  - **Right Column**:
-    - Search bar occupying half the screen.
-    - Thin horizontal divider.
-    - List of available lists (one list per line).
+## Summary of the Issue
+The "Use list" button in `EditListView` now shows a popup and navigates to the correct screen when an option is clicked. However, the list does not automatically populate in the target view.
 
-- **Fix Navigation Issues**:
-  - **Back Button Functionality**:
-    - Ensure the back button navigates back to the manage lists view.
-    - Handle any unsaved changes before navigating.
-  - **Header Icon Navigation**:
-    - Add event handlers to the user account icon in the header to allow view changes.
-    - Ensure clicking the icon successfully transitions to the user account view.
-    - The left sidebar must be visible at all times (make the edit list view display the same as other views: left sidebar on the left, on the right is header on top and the view content area below it)
+## Relevant Files and Changes
+1. **edit_list_view.py**
+   - Simplified the `PopupMenuButton` implementation.
+   - Updated `_handle_use_list` method to handle navigation and list setting.
 
-### 4. Logging
+2. **main_controller.py**
+   - Added navigation methods for `navigate_to_name_picker` and `navigate_to_group_former`.
 
-- **Setup Logging**:
-  - Configure the logging module to write logs to a file (e.g., `app.log`).
-  - Set an appropriate logging level (e.g., `logging.DEBUG`).
-- **Add Logging Statements**:
-  - **View Changes**: Log when the user navigates between screens.
-  - **Button Clicks**: Log button presses with details (e.g., which list was edited or deleted).
-  - **UI Updates**: Log significant UI updates or state changes.
-- **Use Different Log Levels**:
-  - **DEBUG**: Detailed information for diagnosing issues.
-  - **INFO**: Confirmation of normal operations.
-  - **WARNING**: Unexpected events that are handled.
-  - **ERROR**: Serious problems that prevent functionality.
+3. **main_view.py**
+   - Implemented methods to handle view changes and navigation.
 
-### 5. Testing
+4. **list_controller.py**
+   - Added methods to set and notify active list.
 
-- **Functionality Tests**:
-  - Verify that search filters work correctly on both screens.
-  - Ensure that editing and saving list items function as expected.
-  - Test delete actions to confirm that confirmation dialogs appear and actions are executed.
-- **UI Tests**:
-  - Check that the layout matches the design specifications.
-  - Ensure that the UI is responsive and controls are properly aligned.
-- **Logging Tests**:
-  - Review the log file to ensure that all key actions are logged appropriately.
-  - Confirm that the log levels are used correctly and that the log is not too verbose.
+## Logs
+The logs indicate that the navigation occurs, but there is an error when trying to load the active list:
 
-## Summary of Changes to Files
+```log
+2024-11-20 16:53:29,121 - flet_runtime - DEBUG - sent to TCP: 226
+2024-11-20 16:53:29,122 - ui.name_generation_view - INFO - Loading active list in NameGenerationView
+2024-11-20 16:53:29,122 - ui.edit_list_view - ERROR - Error using list: 'ListModel' object is not subscriptable
+2024-11-20 16:53:29,122 - flet_runtime - DEBUG - sent to TCP: 5568
+2024-11-20 16:53:29,122 - asyncio - ERROR - Future exception was never retrieved
+future: <Future finished exception=AttributeError("'NoneType' object has no attribute 'show_snack_bar'")>
+Traceback (most recent call last):
+  File "X:\Programming\Python\Projects\Name Roulette\ui\edit_list_view.py", line 312, in _handle_use_list
+    self.controller.navigate_to_name_picker()
+  File "X:\Programming\Python\Projects\Name Roulette\controller\main_controller.py", line 85, in navigate_to_name_picker
+    self.view.navigate_to_name_picker()
+  File "X:\Programming\Python\Projects\Name Roulette\ui\main_view.py", line 447, in navigate_to_name_picker
+    self.name_generation_view.load_active_list()
+  File "X:\Programming\Python\Projects\Name Roulette\ui\name_generation_view.py", line 514, in load_active_list
+    self._populate_list_data()
+  File "X:\Programming\Python\Projects\Name Roulette\ui\name_generation_view.py", line 523, in _populate_list_data
+    self.names_input.value = "\n".join(item["name"] for item in self.current_list["items"])
+                                                                ~~~~~~~~~~~~~~~~~^^^^^^^^^
+TypeError: 'ListModel' object is not subscriptable
 
-### `manage_lists_view.py`
+During handling of the above exception, another exception occurred:
 
-- **Create New Class**: `ManageListsView` handling both Screen 1 and Screen 2.
-- **Implement Methods**:
-  - `build()`: Determine which screen to display based on the current state.
-  - `build_screen_1()`: Build the UI for Screen 1 (List Overview).
-  - `build_screen_2()`: Build the UI for Screen 2 (List Details).
-- **Event Handlers**:
-  - `on_search_change()`: Handle dynamic filtering in search bars.
-  - `on_edit_click()`: Transition to Screen 2 with the selected list.
-  - `on_delete_click()`: Display confirmation dialog and handle deletion.
-  - `on_save_click()`: Save edits made to a list.
-  - `on_use_click()`: Placeholder for future functionality.
-  - `on_back_click()`: Navigate back to `ManageListsView` and handle unsaved changes.
-  - `on_header_icon_click()`: Handle navigation from header icons.
-- **Update Grid Layout**:
-  - Changed `runs_count` from `2` to `3` in the `GridView` to display three lists per row.
-- **Remove Placeholder Lists**:
-  - Removed the placeholder list items generation.
-  - Implemented loading of lists from `saved_lists.json` via the controller.
-- **Add Vertical Divider in Screen 2**:
-  - Ensured a `VerticalDivider` is present between the two halves of Screen 2 for better distinction.
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "X:\Programming\Python\Projects\Name Roulette\.env-name\Lib\site-packages\flet_core\page.py", line 944, in wrapper
+    handler(*args)
+  File "X:\Programming\Python\Projects\Name Roulette\ui\edit_list_view.py", line 92, in <lambda>
+    on_click=lambda _: self._handle_use_list(View.NAME_PICKER),
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "X:\Programming\Python\Projects\Name Roulette\ui\edit_list_view.py", line 326, in _handle_use_list
+    self.page.show_snack_bar(SnackBar(content=Text("Error loading list!"), bgcolor="#ef4444"))
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'show_snack_bar'
+```
+
+
+## Next Steps
+1. Fix the error in `name_generation_view.py` where `ListModel` is being treated as a dictionary.
+2. Ensure that the `load_active_list` method correctly handles the `ListModel` object.
+
+
+This will help us pick up where we left off and address the new errors effectively.

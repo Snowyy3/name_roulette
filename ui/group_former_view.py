@@ -630,18 +630,35 @@ class GroupFormationView(UserControl):
 
     def load_active_list(self):
         """Load and display the active list"""
-        logger.info("Loading active list in GroupFormationView")
-        self.current_list = self.controller.list_controller.get_selected_list()
-        if self.current_list:
-            self._populate_list_data()
-            self.update()
+        try:
+            logger.info("Loading active list in GroupFormationView")
+            self.current_list = self.controller.list_controller.get_selected_list()
+            if self.current_list:
+                self._populate_list_data()
+                self.update()
+        except Exception as e:
+            logger.error(f"Error loading active list: {e}")
 
     def _populate_list_data(self):
         """Populate the view with active list data"""
         if not self.current_list:
             return
 
-        self.names_input.value = "\n".join(item["name"] for item in self.current_list["items"])
-        self.gender_input.value = "\n".join(item.get("gender", "") for item in self.current_list["items"])
-        self.names_input.update()
-        self.gender_input.update()
+        try:
+            # Get items from ListModel
+            items = self.current_list.items
+
+            # Format the names and genders
+            names = [item.get("name", "") for item in items]
+            genders = [item.get("gender", "") for item in items]
+
+            # Update the input fields
+            self.names_input.value = "\n".join(names)
+            self.gender_input.value = "\n".join(genders)
+
+            # Update the UI
+            self.names_input.update()
+            self.gender_input.update()
+
+        except Exception as e:
+            logger.error(f"Error populating list data: {e}")

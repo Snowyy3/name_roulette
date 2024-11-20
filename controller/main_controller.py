@@ -74,17 +74,22 @@ class MainController:
         """Delete list using list controller"""
         return self.list_controller.delete_list(list_id)
 
-    def set_active_list(self, list_data: dict) -> None:
+    def set_active_list(self, list_data: ListModel | dict):
         """Set active list and update relevant views"""
         self.list_controller.set_active_list(list_data)
 
     def navigate_to_name_picker(self):
-        """Navigate to name picker view with active list"""
-        # Signal view change
+        """Navigate to name picker view"""
+        logger.info("Navigating to name picker")
         if hasattr(self, "view"):
-            self.view.handle_view_change(View.NAME_PICKER)
+            self.view.navigate_to_name_picker()
+        else:
+            logger.error("No view found in controller")
 
     def navigate_to_group_former(self):
-        """Navigate to group former view with active list"""
+        """Navigate to group former view"""
+        logger.info("Navigating to group former")
         if hasattr(self, "view"):
-            self.view.handle_view_change(View.GROUP_FORMER)
+            self.view.navigate_to_group_former()
+        else:
+            logger.error("No view found in controller")

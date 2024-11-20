@@ -443,9 +443,11 @@ class MainView(UserControl):
     def navigate_to_name_picker(self):
         """Navigate to name picker view"""
         self.handle_view_change(View.NAME_PICKER)
-        self.name_generation_view.load_active_list()
+        if hasattr(self.name_generation_view, "load_active_list"):
+            self.name_generation_view.load_active_list()
 
     def navigate_to_group_former(self):
         """Navigate to group former view"""
         self.handle_view_change(View.GROUP_FORMER)
-        self.group_former_view.load_active_list()
+        if hasattr(self.group_former_view, "load_active_list"):
+            self.group_former_view.load_active_list()

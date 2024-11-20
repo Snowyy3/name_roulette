@@ -1,5 +1,0 @@
-- Integrate into MainController
-- saved_list.json: to be created, and related logics changed to adapt with user auth
-- Integrate into MainView
-- change views.py
-- 

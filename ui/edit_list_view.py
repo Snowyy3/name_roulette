@@ -61,23 +61,6 @@ class EditListView(UserControl):
         )
         self._populate_available_lists()
 
-        self.use_list_button = PopupMenuButton(
-            content=IconButton(
-                icon=ft.icons.PLAY_LESSON_OUTLINED,
-                tooltip="Use list",
-            ),
-            items=[
-                PopupMenuItem(
-                    text="Use in Name Picker",
-                    on_click=lambda e: self._handle_use_list(View.NAME_PICKER),
-                ),
-                PopupMenuItem(
-                    text="Use in Group Former",
-                    on_click=lambda e: self._handle_use_list(View.GROUP_FORMER),
-                ),
-            ],
-        )
-
     def _init_components(self):
         """Initialize components for List Details"""
         self.list_name_field = TextField(
@@ -98,6 +81,22 @@ class EditListView(UserControl):
             on_change=self._handle_item_search,
             on_submit=self._handle_item_search,  # Add submit handler
             expand=True,
+        )
+        self.use_list_button = PopupMenuButton(
+            icon=ft.icons.PLAY_LESSON_OUTLINED,
+            tooltip="Use list",
+            items=[
+                PopupMenuItem(
+                    text="Use in Name Picker",
+                    icon=ft.icons.FORMAT_LIST_BULLETED,
+                    on_click=lambda _: self._handle_use_list(View.NAME_PICKER),
+                ),
+                PopupMenuItem(
+                    text="Use in Group Former",
+                    icon=ft.icons.GROUP,
+                    on_click=lambda _: self._handle_use_list(View.GROUP_FORMER),
+                ),
+            ],
         )
 
     def build(self):
@@ -297,32 +296,37 @@ class EditListView(UserControl):
 
     def _handle_use_list(self, target_view: View):
         """Handle using the list in different views"""
-        if self.has_unsaved_changes:
-            self._show_unsaved_changes_dialog(lambda: self._use_list_in_view(target_view))
-        else:
-            self._use_list_in_view(target_view)
-
-    def _use_list_in_view(self, target_view: View):
-        """Use the list in the specified view"""
+        logger.info(f"Handle use list called with target_view: {target_view}")
         try:
-            # Save current list state to controller
-            self.controller.set_active_list(self.list_model)
+            # Save if there are unsaved changes
+            if self.has_unsaved_changes and not self._handle_save(None):
+                logger.warning("Failed to save changes before using list")
+                return
 
-            # Navigate to target view using controller
+            # Update active list in controller
+            self.controller.set_active_list(self.list_model)
+            logger.info(f"Set active list: {self.list_model.name}")
+
+            # Navigate based on target view
             if target_view == View.NAME_PICKER:
                 self.controller.navigate_to_name_picker()
             elif target_view == View.GROUP_FORMER:
                 self.controller.navigate_to_group_former()
 
-            self.page.show_snack_bar(
-                SnackBar(
-                    content=Text(f"List loaded in {target_view.name.replace('_', ' ').title()}"),
-                    bgcolor="#10b981",
+            # Show success message only if page is available
+            if hasattr(self, "page") and self.page:
+                self.page.show_snack_bar(
+                    ft.SnackBar(
+                        content=Text(f"List loaded in {target_view.name.replace('_', ' ').title()}"),
+                        bgcolor="#10b981",
+                    )
                 )
-            )
+
         except Exception as e:
-            logger.error(f"Error setting active list: {e}")
-            self.page.show_snack_bar(SnackBar(content=Text("Error loading list!"), bgcolor="#ef4444"))
+            logger.error(f"Error using list: {e}")
+            # Only try to show snackbar if page is available
+            if hasattr(self, "page") and self.page:
+                self.page.show_snack_bar(ft.SnackBar(content=Text("Error loading list!"), bgcolor="#ef4444"))
 
     def _handle_item_search(self, e):
         """Handle item search"""

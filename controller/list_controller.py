@@ -93,7 +93,7 @@ class ListController:
         try:
             with open("data/saved_lists.json", "r+") as file:
                 data = json.load(file)
-                
+
                 # Get correct section based on user type
                 if username == "guest":
                     user_section = data.setdefault("guest", {"lists": {}})
@@ -108,10 +108,10 @@ class ListController:
                             {
                                 "id": item.get("id", str(uuid.uuid4())),
                                 "name": item.get("name", ""),
-                                **({"gender": item["gender"]} if item.get("gender") else {})
+                                **({"gender": item["gender"]} if item.get("gender") else {}),
                             }
                             for item in lst.items
-                        ]
+                        ],
                     }
                     for lst in self.lists
                 }
@@ -166,14 +166,24 @@ class ListController:
 
     def set_active_list(self, list_data: Dict | ListModel) -> None:
         """Set the currently selected list and notify dependent views"""
-        self.selected_list = list_data if isinstance(list_data, ListModel) else ListModel(list_data)
-        self._notify_views()
+        try:
+            self.selected_list = list_data if isinstance(list_data, ListModel) else ListModel(list_data)
+            logger.info(f"Set active list: {self.selected_list.name}")
+            self._notify_views()
+        except Exception as e:
+            logger.error(f"Error setting active list: {e}")
+            raise
 
     def _notify_views(self) -> None:
         """Notify dependent views of list changes"""
-        for view_name in ["name_generation_view", "group_former_view"]:
-            if hasattr(self, view_name):
-                getattr(self, view_name).load_active_list()
+        try:
+            if hasattr(self, "main_view"):
+                if hasattr(self.main_view, "name_generation_view"):
+                    self.main_view.name_generation_view.load_active_list()
+                if hasattr(self.main_view, "group_former_view"):
+                    self.main_view.group_former_view.load_active_list()
+        except Exception as e:
+            logger.error(f"Error notifying views: {e}")
 
     def set_selected_list(self, list_data: Dict | ListModel) -> None:
         """Set the currently selected list"""
