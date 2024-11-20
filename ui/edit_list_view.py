@@ -51,6 +51,13 @@ class EditListView(UserControl):
             rows=[],  # Will be populated later
         )
 
+        # Initialize lists view
+        self.available_lists = ListView(
+            controls=[],
+            expand=True,
+        )
+        self._populate_available_lists()
+
         logger.info("Initializing EditListView")
         self._init_components()
 
@@ -157,17 +164,18 @@ class EditListView(UserControl):
 
     def _create_available_lists_view(self):
         """Create the available lists view"""
-        return ListView(
-            controls=[
-                ListTile(
-                    title=Text(lst["name"]),
-                    leading=Icon(ft.icons.LIST_ALT),
-                    on_click=lambda e, id=lst["id"]: self._handle_list_select(id),
-                )
-                for lst in self.controller.list_controller.get_all_lists()
-            ],
-            expand=True,
-        )
+        return self.available_lists
+
+    def _populate_available_lists(self):
+        """Populate the available lists view"""
+        self.available_lists.controls = [
+            ListTile(
+                title=Text(lst["name"]),
+                leading=Icon(ft.icons.LIST_ALT),
+                on_click=lambda e, id=lst["id"]: self._handle_list_select(id),
+            )
+            for lst in self.controller.list_controller.get_all_lists()
+        ]
 
     def _handle_list_search(self, e):
         """Handle searching through available lists"""
@@ -175,8 +183,7 @@ class EditListView(UserControl):
         all_lists = self.controller.list_controller.get_all_lists()
         filtered_lists = [lst for lst in all_lists if query in lst["name"].lower()]
 
-        available_lists = self._create_available_lists_view()
-        available_lists.controls = [
+        self.available_lists.controls = [
             ListTile(
                 title=Text(lst["name"]),
                 leading=Icon(ft.icons.LIST_ALT),
@@ -184,7 +191,7 @@ class EditListView(UserControl):
             )
             for lst in filtered_lists
         ]
-        available_lists.update()
+        self.available_lists.update()
 
     def _handle_list_select(self, list_id: str):
         """Handle selection of a list from the right column"""

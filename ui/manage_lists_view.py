@@ -32,22 +32,12 @@ class ManageListsView(UserControl):
         self.lists_data = []  # Store all lists
         self.filtered_lists = []  # Store filtered lists based on search
         self.search_query = ""  # Current search query
-
-        # Initialize grid_view here instead of in build()
-        self.grid_view = GridView(
-            expand=True,
-            runs_count=3,
-            max_extent=350,
-            child_aspect_ratio=3.0,
-            spacing=10,
-            run_spacing=10,
-            controls=[],
-        )
+        self.grid_view = None  # Will be initialized in build()
 
         logger.info("Initializing ManageListsView")
         logger.debug("Initializing UI components")
         self._init_components()
-        self._load_lists()
+        self._load_lists()  # Just load the data
 
     def _init_components(self):
         """Initialize components for List Overview"""
@@ -64,8 +54,16 @@ class ManageListsView(UserControl):
         """Build the view"""
         logger.debug("Building ManageListsView")
 
-        # Update grid controls here instead of creating new grid
-        self.grid_view.controls = [self._create_list_item(list_data) for list_data in self.filtered_lists]
+        # Initialize grid view during build
+        self.grid_view = GridView(
+            expand=True,
+            runs_count=3,
+            max_extent=350,
+            child_aspect_ratio=3.0,
+            spacing=10,
+            run_spacing=10,
+            controls=[self._create_list_item(list_data) for list_data in self.filtered_lists],
+        )
 
         return Container(
             content=Column(
@@ -207,9 +205,8 @@ class ManageListsView(UserControl):
         logger.debug("Loading lists")
         self.lists_data = self.controller.list_controller.get_all_lists()
         self.filtered_lists = self.lists_data.copy()
-        # Force update of grid after loading
-        self._update_list_grid()
         logger.info(f"Loaded {len(self.lists_data)} lists")
+        # Removed grid update from here since grid isn't created yet
 
     def filter_lists(self, query: str):
         """Filter lists based on search query"""
@@ -227,9 +224,10 @@ class ManageListsView(UserControl):
     def _update_list_grid(self):
         """Update the grid view with filtered lists"""
         try:
-            self.grid_view.controls = [self._create_list_item(lst) for lst in self.filtered_lists]
-            self.grid_view.update()
-            logger.debug(f"Updated grid with {len(self.filtered_lists)} items")
+            if self.grid_view:  # Only update if grid exists
+                self.grid_view.controls = [self._create_list_item(lst) for lst in self.filtered_lists]
+                self.grid_view.update()
+                logger.debug(f"Updated grid with {len(self.filtered_lists)} items")
         except Exception as e:
             logger.error(f"Error updating grid: {e}")
 

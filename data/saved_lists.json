@@ -37,6 +37,15 @@
                         "name": "SpaceX Flight 5",
                         "id": "1",
                         "gender": "Male"
+                    },
+                    {
+                        "name": "oh what",
+                        "id": "2",
+                        "gender": "female"
+                    },
+                    {
+                        "name": "missing bruh",
+                        "id": "3"
                     }
                 ]
             }
