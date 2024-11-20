@@ -1,5 +1,6 @@
 import random as rd
 
+
 class NameGenerator:
     """A class to handle name generation and validation logic with gender-specific selection."""
 
@@ -18,10 +19,7 @@ class NameGenerator:
             list[tuple[str, str]]: List of tuples where each tuple is (name, gender).
         """
         # Map Vietnamese gender terms to English
-        gender_map = {"nam": "male",
-                      "nữ": "female",
-                      "male": "male",
-                      "female": "female"}
+        gender_map = {"nam": "male", "nữ": "female", "male": "male", "female": "female"}
 
         names = names_text.strip().splitlines()
         genders = genders_text.strip().splitlines()
@@ -61,7 +59,7 @@ class NameGenerator:
         """
         # Split names by line and clean them
         names = [name.strip() for name in names_text.strip().splitlines() if name.strip()]
-        
+
         # Check if there are enough names to meet the total count
         if total_count > len(names):
             return []  # Not enough names to meet the request
@@ -69,7 +67,9 @@ class NameGenerator:
         # Randomly sample the specified number of names
         return rd.sample(names, total_count)
 
-    def generate_names_with_gender(self, names: list[tuple[str, str]], male_count: int, female_count: int, total_count: int) -> list[str]:
+    def generate_names_with_gender(
+        self, names: list[tuple[str, str]], male_count: int, female_count: int, total_count: int
+    ) -> list[str]:
         """Generate names with exact counts of male and female selections within a total count.
 
         Args:
@@ -98,7 +98,7 @@ class NameGenerator:
 
         # Calculate remaining slots for the other gender
         remaining_count = total_count - len(selected_names)
-        
+
         # Add additional names from the remaining gender pool to fill the total count
         if remaining_count > 0:
             remaining_gender = "female" if male_count > 0 else "male"  # Choose opposite gender
@@ -107,12 +107,20 @@ class NameGenerator:
             # Ensure we don't select more names than are available in the pool
             if remaining_count > len(remaining_pool):
                 return []  # Not enough names to meet the total request
-            
+
             selected_names += rd.sample(remaining_pool, remaining_count)
 
         return selected_names
 
-    def process_name_generation(self, names_text: str, genders_text: str, selected_num: str, custom_value: str = "", male_count: int = 0, female_count: int = 0) -> list[str]:
+    def process_name_generation(
+        self,
+        names_text: str,
+        genders_text: str,
+        selected_num: str,
+        custom_value: str = "",
+        male_count: int = 0,
+        female_count: int = 0,
+    ) -> list[str]:
         """Processes the name generation request with exact gender-specific selection within a total count.
 
         Args:
@@ -146,3 +154,64 @@ class NameGenerator:
             return int(selected_num)
         except ValueError:
             return 0
+
+    def validate_input(
+        self,
+        names: list[tuple[str, str]],
+        selected_num: str,
+        custom_value: str,
+        male_count: str = "0",
+        female_count: str = "0",
+    ) -> bool:
+        """Validate the input for name generation.
+
+        Args:
+            names: List of (name, gender) tuples
+            selected_num: Selected number option ("1", "2", "3", or "custom")
+            custom_value: Custom number input value
+            male_count: Number of male names to select
+            female_count: Number of female names to select
+
+        Returns:
+            bool: True if input is valid, False otherwise
+        """
+        # Validate total number of names to select
+        try:
+            total_count = self.get_num_names(selected_num, custom_value)
+            if total_count <= 0:
+                return False
+
+            if not names:  # No names provided
+                return False
+
+            # If gender counts specified, validate them
+            if male_count != "0" or female_count != "0":
+                try:
+                    male_count = int(male_count)
+                    female_count = int(female_count)
+
+                    # Get available names by gender
+                    gendered_names = self.separate_by_gender(names)
+                    available_males = len(gendered_names["male"])
+                    available_females = len(gendered_names["female"])
+
+                    # Check if we have enough names of each gender
+                    if male_count > available_males or female_count > available_females:
+                        return False
+
+                    # Check if total gender counts don't exceed total requested
+                    if male_count + female_count > total_count:
+                        return False
+
+                except ValueError:
+                    return False
+            else:
+                # For non-gender specific validation, just check total available names
+                available_names = len(names)
+                if total_count > available_names:
+                    return False
+
+            return True
+
+        except (ValueError, TypeError):
+            return False

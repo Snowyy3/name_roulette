@@ -16,15 +16,17 @@ class MainController:
         self.page = page
         self.view = None
 
-        self.name_generation = NameGenerationController()
-        self.group_formation = GroupFormationController()
-
         # Create a single UserAuthentication instance
         self.user_auth = UserAuthentication()
 
         # Initialize controllers in correct order with proper references
         self.auth = UserAuthenticationController(page, auth=self.user_auth)
         self.list_controller = ListController(self.auth)
+
+        # Update NameGenerationController initialization with list_controller
+        self.name_generation = NameGenerationController(list_controller=self.list_controller)
+        self.group_formation = GroupFormationController()
+
         self.auth.set_list_controller(self.list_controller)
 
     def set_main_view(self, view):
@@ -93,3 +95,72 @@ class MainController:
             self.view.navigate_to_group_former()
         else:
             logger.error("No view found in controller")
+
+    def handle_name_generation(
+        self,
+        names_text: str,
+        genders_text: str,
+        selected_num: str,
+        custom_value: str,
+        selected_gender_filter: str,
+        male_count: str = "0",
+        female_count: str = "0",
+    ) -> list[str]:
+        """Handle name generation at app level."""
+        try:
+            return self.name_generation.generate_names(
+                names_text, genders_text, selected_num, custom_value, selected_gender_filter, male_count, female_count
+            )
+        except Exception as e:
+            logger.error(f"Error generating names: {e}", exc_info=True)
+            self.page.show_snack_bar(ft.SnackBar(content=ft.Text("Error generating names!")))
+            return []
+
+    def validate_input(
+        self,
+        names_text: str,
+        selected_num: str,
+        custom_value: str,
+        selected_gender_filter: str = "none",
+        male_count: str = "0",
+        female_count: str = "0",
+    ) -> bool:
+        """Validate name generation input at app level."""
+        try:
+            return self.name_generation.validate_input(
+                names_text, selected_num, custom_value, selected_gender_filter, male_count, female_count
+            )
+        except Exception as e:
+            logger.error(f"Error validating input: {e}", exc_info=True)
+            return False
+
+    def handle_list_update(self, list_data: ListModel) -> None:
+        """Handle list updates and notify relevant controllers."""
+        try:
+            # Update list controller
+            self.list_controller.update_list(list_data)
+
+            # Notify name generation controller if needed
+            if hasattr(self.name_generation, "on_list_update"):
+                self.name_generation.on_list_update(list_data)
+
+            logger.info(f"List updated successfully: {list_data.name}")
+        except Exception as e:
+            logger.error(f"Error updating list: {e}", exc_info=True)
+            self.page.show_snack_bar(ft.SnackBar(content=ft.Text("Error updating list!")))
+
+    def update_selected_num(self, selected_num: str, custom_value: str) -> tuple[bool, str]:
+        """Delegate to name generation controller."""
+        return self.name_generation.update_selected_num(selected_num, custom_value)
+
+    def update_gender_filter(self, filter_type: str) -> dict[str, bool]:
+        """Delegate to name generation controller."""
+        return self.name_generation.update_gender_filter(filter_type)
+
+    def format_output_label(self, names: list[str]) -> str:
+        """Delegate to name generation controller."""
+        return self.name_generation.format_output_label(names)
+
+    def handle_clipboard_copy(self, text: str) -> bool:
+        """Delegate to name generation controller."""
+        return self.name_generation.handle_clipboard_copy(text)
