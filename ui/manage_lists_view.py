@@ -1,5 +1,17 @@
 import flet as ft
-from flet import UserControl, Page, Container, Column, Row, Text, TextField, GridView, IconButton, AlertDialog
+from flet import (
+    UserControl,
+    Page,
+    Container,
+    Column,
+    Row,
+    Text,
+    TextField,
+    GridView,
+    IconButton,
+    AlertDialog,
+)
+import uuid
 import logging
 
 # Configure logging
@@ -14,11 +26,23 @@ class ManageListsView(UserControl):
         super().__init__()
         self.page = page
         self.controller = controller
+        self.persistent_search_text = ""  # Add persistent search state
 
         # State Management
         self.lists_data = []  # Store all lists
         self.filtered_lists = []  # Store filtered lists based on search
         self.search_query = ""  # Current search query
+
+        # Initialize grid_view here instead of in build()
+        self.grid_view = GridView(
+            expand=True,
+            runs_count=3,
+            max_extent=350,
+            child_aspect_ratio=3.0,
+            spacing=10,
+            run_spacing=10,
+            controls=[],
+        )
 
         logger.info("Initializing ManageListsView")
         logger.debug("Initializing UI components")
@@ -29,9 +53,10 @@ class ManageListsView(UserControl):
         """Initialize components for List Overview"""
         self.search_field = TextField(
             prefix_icon=ft.icons.SEARCH,
-            suffix_icon=ft.icons.CLEAR,
             hint_text="Search lists...",
+            value=self.persistent_search_text,  # Set initial value from persistent state
             on_change=self._handle_search,
+            on_submit=self._handle_search,  # Add submit handler
             expand=True,
         )
 
@@ -39,26 +64,45 @@ class ManageListsView(UserControl):
         """Build the view"""
         logger.debug("Building ManageListsView")
 
-        self.grid_view = GridView(
-            expand=True,
-            runs_count=3,
-            max_extent=350,
-            child_aspect_ratio=3.0,
-            spacing=10,
-            run_spacing=10,
-            controls=[self._create_list_item(list_data) for list_data in self.filtered_lists],
-        )
+        # Update grid controls here instead of creating new grid
+        self.grid_view.controls = [self._create_list_item(list_data) for list_data in self.filtered_lists]
 
-        return Column(
-            controls=[
-                Container(content=Row([self.search_field]), padding=10),
-                ft.Divider(height=1, color=ft.colors.OUTLINE),
-                Container(
-                    content=self.grid_view,
-                    padding=10,
-                    expand=True,
-                ),
-            ],
+        return Container(
+            content=Column(
+                controls=[
+                    Container(
+                        content=Row(
+                            [
+                                Row(
+                                    [
+                                        self.search_field,
+                                        IconButton(
+                                            icon=ft.icons.CLEAR,
+                                            tooltip="Clear search",
+                                            on_click=self._handle_clear_search,
+                                        ),
+                                    ],
+                                    expand=True,
+                                ),
+                                IconButton(
+                                    icon=ft.icons.ADD,
+                                    tooltip="Create new list",
+                                    on_click=self._handle_add_list,
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        padding=10,
+                    ),
+                    ft.Divider(height=1, color=ft.colors.OUTLINE),
+                    Container(
+                        content=self.grid_view,
+                        padding=10,
+                        expand=True,
+                    ),
+                ],
+                expand=True,
+            ),
             expand=True,
         )
 
@@ -91,21 +135,33 @@ class ManageListsView(UserControl):
     def _handle_search(self, e):
         """Handle search field changes and filter lists"""
         logger.debug(f"Search field changed: {e.control.value}")
-        self.search_query = e.control.value
-        self.filter_lists(self.search_query)
+        self.persistent_search_text = e.control.value  # Update persistent state
+        self.filter_lists(self.persistent_search_text)
         self._update_list_grid()
+
+    def _handle_clear_search(self, e):
+        """Handle clearing the search field"""
+        logger.debug("Clearing search field")
+        self.search_field.value = ""
+        self.persistent_search_text = ""
+        self.filter_lists("")
+        self._update_list_grid()
+        self.search_field.update()
 
     def _handle_edit_list(self, list_id: str):
         """Handle edit list button click"""
         logger.info(f"Attempting to edit list {list_id}")
         try:
+            # Find the list data from our local lists_data first
             selected_list = next((lst for lst in self.lists_data if lst["id"] == list_id), None)
-            if selected_list:
-                # Navigate to EditListView (implementation will be handled by controller)
-                self.controller.navigate_to_edit_list(selected_list)
+
+            if selected_list is not None:
+                # Navigate to edit view with the selected list data
+                self.controller.navigate_to_edit_list(selected_list)  # Pass the list_data dictionary
             else:
-                logger.warning(f"List {list_id} not found")
+                logger.warning(f"List {list_id} not found in local data")
                 self.page.show_snack_bar(ft.SnackBar(content=Text("List not found!")))
+
         except Exception as e:
             logger.error(f"Error editing list: {e}")
             self.page.show_snack_bar(ft.SnackBar(content=Text("Error loading list for editing!")))
@@ -148,8 +204,11 @@ class ManageListsView(UserControl):
 
     def _load_lists(self):
         """Load lists from controller"""
+        logger.debug("Loading lists")
         self.lists_data = self.controller.list_controller.get_all_lists()
         self.filtered_lists = self.lists_data.copy()
+        # Force update of grid after loading
+        self._update_list_grid()
         logger.info(f"Loaded {len(self.lists_data)} lists")
 
     def filter_lists(self, query: str):
@@ -173,3 +232,32 @@ class ManageListsView(UserControl):
             logger.debug(f"Updated grid with {len(self.filtered_lists)} items")
         except Exception as e:
             logger.error(f"Error updating grid: {e}")
+
+    # Add method to clear search
+    def clear_search(self):
+        """Clear search field and reset filters"""
+        self.search_field.value = ""
+        self.persistent_search_text = ""
+        self.filter_lists("")
+        self._update_list_grid()
+        self.search_field.update()
+
+    def _handle_add_list(self, e):
+        """Handle creating a new list"""
+        logger.debug("Creating new list")
+        try:
+            new_list = {
+                "id": str(uuid.uuid4()),
+                "name": "New List",
+                "items": [],
+            }
+            # Save first, then navigate only if successful
+            if self.controller.list_controller.save_list(new_list):
+                self.controller.navigate_to_edit_list(new_list)
+                # Refresh the list view
+                self._load_lists()
+            else:
+                self.page.show_snack_bar(ft.SnackBar(content=Text("Error creating new list!")))
+        except Exception as e:
+            logger.error(f"Error creating new list: {e}")
+            self.page.show_snack_bar(ft.SnackBar(content=Text("Error creating new list!")))

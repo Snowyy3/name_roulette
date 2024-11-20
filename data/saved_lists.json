@@ -1,103 +1,45 @@
 {
-    "users": [
-        {
-            "user_id": "user1",
-            "username": "alice",
-            "lists": [
-                {
-                    "list_id": "list101",
-                    "list_name": "Team Alpha",
-                    "members": [
+    "users": {
+        "miles2542": {
+            "lists": {
+                "list1": {
+                    "name": "Team Alpha",
+                    "items": [
                         {
-                            "ID": "2",
-                            "name": "Bobby Fischer",
+                            "name": "John Doe",
+                            "id": "1",
                             "gender": "Male"
                         },
                         {
-                            "ID": "3",
-                            "name": "Charlie",
-                            "gender": "Male"
-                        },
-                        {
-                            "name": "David",
-                            "id": "4"
-                        },
-                        {
-                            "name": "Elon Musk",
-                            "id": "5"
-                        }
-                    ]
-                },
-                {
-                    "list_id": "list2",
-                    "list_name": "Project Beta",
-                    "members": [
-                        {
-                            "ID": "4",
-                            "name": "Diana",
-                            "gender": "Female"
-                        },
-                        {
-                            "ID": "5",
-                            "name": "Ethan",
-                            "gender": "Male"
-                        },
-                        {
-                            "ID": "6",
-                            "name": "Fiona",
-                            "gender": "Female"
+                            "name": "Jane Smith"
                         }
                     ]
                 }
-            ]
-        },
-        {
-            "user_id": "user2",
-            "username": "bob",
-            "lists": [
-                {
-                    "list_id": "list3",
-                    "list_name": "Group Gamma",
-                    "members": [
-                        {
-                            "ID": "7",
-                            "name": "George",
-                            "gender": "Male"
-                        },
-                        {
-                            "ID": "8",
-                            "name": "Hannah",
-                            "gender": "Female"
-                        },
-                        {
-                            "ID": "9",
-                            "name": "Ian",
-                            "gender": "Male"
-                        }
-                    ]
-                },
-                {
-                    "list_id": "list4",
-                    "list_name": "Division Delta",
-                    "members": [
-                        {
-                            "ID": "10",
-                            "name": "Jenna",
-                            "gender": "Female"
-                        },
-                        {
-                            "ID": "11",
-                            "name": "Kevin",
-                            "gender": "Male"
-                        },
-                        {
-                            "ID": "12",
-                            "name": "Laura",
-                            "gender": "Female"
-                        }
-                    ]
-                }
-            ]
+            }
         }
-    ]
+    },
+    "guest": {
+        "lists": {
+            "3f89074a-7584-46e2-8781-7bcf8ae968f0": {
+                "name": "New List 02",
+                "items": [
+                    {
+                        "name": "Elon Musk",
+                        "id": "1",
+                        "gender": "Female"
+                    }
+                ]
+            },
+            "45e731c6-055c-4423-8907-19b9ae1ff717": {
+                "name": "New List 003",
+                "items": [
+                    {
+                        "name": "SpaceX Flight 5",
+                        "id": "1",
+                        "gender": "Male"
+                    }
+                ]
+            }
+        }
+    }
 }

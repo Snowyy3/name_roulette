@@ -1,6 +1,5 @@
 from enum import Enum, auto
 
-
 class View(Enum):
     NAME_PICKER = auto()
     GROUP_FORMER = auto()
@@ -9,3 +8,4 @@ class View(Enum):
     USER_ACCOUNTS = auto()
     LOGIN = auto()
     SIGNUP = auto()
+    EDIT_LIST = auto()

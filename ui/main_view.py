@@ -28,6 +28,8 @@ from ui.left_sidebar import LeftSidebar
 from ui.views import View
 from ui.login_view import LoginView
 from ui.signup_view import SignUpView
+from ui.manage_lists_view import ManageListsView
+from ui.edit_list_view import EditListView
 
 
 class MainView(UserControl):
@@ -43,8 +45,12 @@ class MainView(UserControl):
         super().__init__()
         self.page = page
         self.controller = controller
+        # Set reference to this view in controller
+        self.controller.set_main_view(self)
         self.name_generation_view = NameGenerationView(self.controller)
         self.group_former_view = GroupFormationView(self.controller)
+        self.manage_lists_view = ManageListsView(self.page, self.controller)
+        self.edit_list_view = None  # Will be instantiated when needed
         self.page.on_resize = self.on_resize
         self.current_view = View.NAME_PICKER  # Default to NAME_PICKER instead of LOGIN
         self.previous_view = None  # Track previous view
@@ -70,24 +76,24 @@ class MainView(UserControl):
 
         self.user_account_button = ft.PopupMenuButton(
             content=Container(
-            content=Row(
-                controls=[
-                Icon(ft.icons.PERSON_OFF_ROUNDED, color="#6b7280"),  # Default to guest icon
-                Text("Guest", size=14, color="#6b7280"),
-                Icon(ft.icons.ARROW_DROP_DOWN, color="#6b7280"),
-                ],
-                tight=True,
-            ),
-            padding=ft.padding.all(8),
-            border_radius=20,
-            bgcolor=ft.colors.SURFACE_VARIANT,
-            ink=False,  # Disable hover effect
+                content=Row(
+                    controls=[
+                        Icon(ft.icons.PERSON_OFF_ROUNDED, color="#6b7280"),  # Default to guest icon
+                        Text("Guest", size=14, color="#6b7280"),
+                        Icon(ft.icons.ARROW_DROP_DOWN, color="#6b7280"),
+                    ],
+                    tight=True,
+                ),
+                padding=ft.padding.all(8),
+                border_radius=20,
+                bgcolor=ft.colors.SURFACE_VARIANT,
+                ink=False,  # Disable hover effect
             ),
             items=[
-            PopupMenuItem(
-                text="Log In",
-                on_click=lambda _: self.handle_view_change(View.LOGIN),
-            )
+                PopupMenuItem(
+                    text="Log In",
+                    on_click=lambda _: self.handle_view_change(View.LOGIN),
+                )
             ],
         )
 
@@ -145,11 +151,11 @@ class MainView(UserControl):
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
-    def handle_view_change(self, view: View):
+    def handle_view_change(self, view: View, pre_created_view=None):
         """Handle view changes by updating the AppBar title and content area."""
         self._update_previous_view(view)
         self._update_appbar(view)
-        self._update_content_area(view)
+        self._update_content_area(view, pre_created_view)
 
     def _update_previous_view(self, view: View):
         if self.current_view not in [View.LOGIN, View.SIGNUP] or view not in [View.LOGIN, View.SIGNUP]:
@@ -158,10 +164,17 @@ class MainView(UserControl):
 
     def _update_appbar(self, view: View):
         self.page.appbar.title.value = view.name.replace("_", " ").title()
-        self.manage_lists_btn.icon = ft.icons.BOOKMARKS if view == View.MANAGE_LISTS else ft.icons.BOOKMARKS_OUTLINED
+
+        # Update manage lists button state
+        self.manage_lists_btn.icon = (
+            ft.icons.BOOKMARKS if view in [View.MANAGE_LISTS, View.EDIT_LIST] else ft.icons.BOOKMARKS_OUTLINED
+        )
+
+        # Update user account button state
         self.user_account_button.icon = (
             ft.icons.MANAGE_ACCOUNTS if view == View.USER_ACCOUNTS else ft.icons.MANAGE_ACCOUNTS_OUTLINED
         )
+
         self._update_ui_elements()
 
     def _update_ui_elements(self):
@@ -169,7 +182,7 @@ class MainView(UserControl):
         self.manage_lists_btn.update()
         self.user_account_button.update()
 
-    def _update_content_area(self, view: View):
+    def _update_content_area(self, view: View, pre_created_view=None):
         if not isinstance(self.content_area.content, Column):
             return
 
@@ -177,28 +190,44 @@ class MainView(UserControl):
         content_column.controls.clear()
 
         self._set_column_alignment(content_column, view)
-        view_content = self._get_view_content(view)
+        view_content = self._get_view_content(view, pre_created_view)
         content_column.controls.append(view_content)
         self.content_area.update()
+
+        if view == View.MANAGE_LISTS and hasattr(self, "manage_lists_view"):
+            # Restore search state when returning to manage lists
+            self.manage_lists_view.search_field.value = self.manage_lists_view.persistent_search_text
+            self.manage_lists_view.filter_lists(self.manage_lists_view.persistent_search_text)
+        elif view == View.EDIT_LIST and self.edit_list_view:
+            # Restore search state when returning to edit list
+            self.edit_list_view.item_search_field.value = self.edit_list_view.persistent_item_search
+            self.edit_list_view._update_items_table()
 
     def _set_column_alignment(self, column: Column, view: View):
         if view in [View.LOGIN, View.SIGNUP]:
             column.alignment = ft.MainAxisAlignment.CENTER
         else:
             column.alignment = ft.MainAxisAlignment.START
-            column.controls.append(Container(height=40))
+            if view not in [View.EDIT_LIST]:  # Don't add top spacing for edit list view
+                column.controls.append(Container(height=40))
 
-    def _get_view_content(self, view: View):
+    def _get_view_content(self, view: View, pre_created_view=None):
         view_map = {
             View.NAME_PICKER: self.name_generation_view,
             View.GROUP_FORMER: self.group_former_view,
             View.SETTINGS: Text("Settings, coming soon!"),
-            View.MANAGE_LISTS: Text("Manage Lists, coming soon!"),
+            View.MANAGE_LISTS: self.manage_lists_view,
+            View.EDIT_LIST: pre_created_view if pre_created_view else self.edit_list_view,
             View.USER_ACCOUNTS: Text("User Accounts, coming soon!"),
             View.LOGIN: self.login_view,
             View.SIGNUP: self.signup_view,
         }
         return view_map.get(view, Text("Page not found"))
+
+    def navigate_to_edit_list(self, list_data: dict):
+        """Navigate to edit list view with the selected list data"""
+        self.edit_list_view = EditListView(self.page, self.controller, list_data)
+        self.handle_view_change(View.EDIT_LIST, self.edit_list_view)
 
     def on_resize(self, _) -> None:
         if self.page:
@@ -407,3 +436,13 @@ class MainView(UserControl):
     def _close_dialog(self):
         self.page.dialog.open = False
         self.page.update()
+
+    def navigate_to_name_picker(self):
+        """Navigate to name picker view"""
+        self.handle_view_change(View.NAME_PICKER)
+        self.name_generation_view.load_active_list()
+
+    def navigate_to_group_former(self):
+        """Navigate to group former view"""
+        self.handle_view_change(View.GROUP_FORMER)
+        self.group_former_view.load_active_list()

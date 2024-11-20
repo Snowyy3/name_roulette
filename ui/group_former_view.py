@@ -16,6 +16,9 @@ from flet import (
     icons,
 )
 from model.group_former import GroupFormer
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class GroupFormationView(UserControl):
@@ -27,6 +30,7 @@ class GroupFormationView(UserControl):
         self.manual_group = "none"
         self.manually_assigned_names = []
         self.existing_groups = None
+        self.current_list = None
 
         self.left_column_width = 500  # Initial size for the left column
         self.middle_column_min_width = 300  # Initial size for the middle column (set as the minimum)
@@ -43,9 +47,9 @@ class GroupFormationView(UserControl):
             border=ft.InputBorder.OUTLINE,
         )
         self.error_message = ft.Text(
-            value="", 
-            color="red", 
-            size=12,  
+            value="",
+            color="red",
+            size=12,
         )
         self.gender_input = TextField(
             label="Gender",
@@ -503,7 +507,7 @@ class GroupFormationView(UserControl):
             except ValueError:
                 female_count = 0
 
-    # check thông báo không đủ nam/nữ:
+        # check thông báo không đủ nam/nữ:
         if self.selected_gender_filter != "none":
             total_male = len([name for name, gender in names if gender == "male"])
             total_female = len([name for name, gender in names if gender == "female"])
@@ -513,7 +517,7 @@ class GroupFormationView(UserControl):
                     f"Not enough males! Required: {male_count * group_num}, Available: {total_male}"
                 )
                 self.error_message.update()
-            
+
             if total_female < female_count * group_num:
                 self.error_message.value = (
                     f"Not enough females! Required: {female_count * group_num}, Available: {total_female}"
@@ -623,3 +627,21 @@ class GroupFormationView(UserControl):
         """Show draggable cursor when hovering over the divider."""
         e.control.mouse_cursor = ft.MouseCursor.RESIZE_LEFT_RIGHT
         e.control.update()
+
+    def load_active_list(self):
+        """Load and display the active list"""
+        logger.info("Loading active list in GroupFormationView")
+        self.current_list = self.controller.list_controller.get_selected_list()
+        if self.current_list:
+            self._populate_list_data()
+            self.update()
+
+    def _populate_list_data(self):
+        """Populate the view with active list data"""
+        if not self.current_list:
+            return
+
+        self.names_input.value = "\n".join(item["name"] for item in self.current_list["items"])
+        self.gender_input.value = "\n".join(item.get("gender", "") for item in self.current_list["items"])
+        self.names_input.update()
+        self.gender_input.update()

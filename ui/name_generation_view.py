@@ -19,6 +19,9 @@ from flet import (
 )
 from model.name_generator import NameGenerator
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class NameGenerationView(UserControl):
@@ -29,6 +32,7 @@ class NameGenerationView(UserControl):
         super().__init__()
         self.controller = controller
         self.name_generator = NameGenerator()
+        self.current_list = None
 
         self.left_column_width = 500  # Initial size for the left column
         self.middle_column_min_width = 300  # Decreased minimum size for the middle column
@@ -501,3 +505,22 @@ class NameGenerationView(UserControl):
         """Show draggable cursor when hovering over the divider."""
         e.control.mouse_cursor = ft.MouseCursor.RESIZE_LEFT_RIGHT
         e.control.update()
+
+    def load_active_list(self):
+        """Load and display the active list"""
+        logger.info("Loading active list in NameGenerationView")
+        self.current_list = self.controller.list_controller.get_selected_list()
+        if self.current_list:
+            self._populate_list_data()
+            self.update()
+
+    def _populate_list_data(self):
+        """Populate the view with active list data"""
+        if not self.current_list:
+            return
+
+        # Update list name display
+        self.names_input.value = "\n".join(item["name"] for item in self.current_list["items"])
+        self.gender_input.value = "\n".join(item.get("gender", "") for item in self.current_list["items"])
+        self.names_input.update()
+        self.gender_input.update()
