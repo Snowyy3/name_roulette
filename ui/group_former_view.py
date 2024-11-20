@@ -14,8 +14,10 @@ from flet import (
     Divider,
     IconButton,
     icons,
+    Audio,
 )
 from model.group_former import GroupFormer
+import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -31,10 +33,14 @@ class GroupFormationView(UserControl):
         self.manually_assigned_names = []
         self.existing_groups = None
         self.current_list = None
+        self.remaining_counts = None
 
         self.left_column_width = 500  # Initial size for the left column
         self.middle_column_min_width = 300  # Initial size for the middle column (set as the minimum)
         self.right_column_width = 550  # Initial size for the right column
+
+        self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
+        self.clear_sound = Audio(src="clear.mp3", autoplay=False)
 
         # Initialize input fields
         self.names_input = TextField(
@@ -45,8 +51,20 @@ class GroupFormationView(UserControl):
             expand=True,
             height=200,
             border=ft.InputBorder.OUTLINE,
+            on_change=self.addition_update_group_size_group_num,
         )
+        self.last_updated = None  # Lưu trạng thái: 'group_size' hoặc 'group_num'
         self.error_message = ft.Text(
+            value="",
+            color="red",
+            size=12,
+        )
+        self.error_message_manual = ft.Text(
+            value="",
+            color="red",
+            size=12,
+        )
+        self.error_message_manual = ft.Text(
             value="",
             color="red",
             size=12,
@@ -69,6 +87,12 @@ class GroupFormationView(UserControl):
             [self.gender_input],
             visible=self.show_gender_column,
             expand=1,
+        )
+        self.save_list_button = IconButton(
+            icon=icons.BOOKMARK_ADD_OUTLINED,
+            icon_size=20,
+            tooltip="Save as list",
+            on_click=self.handle_save_list_click,
         )
 
         self.input_area = Row(
@@ -94,6 +118,7 @@ class GroupFormationView(UserControl):
             label="Max Group Size",
             width=150,
             on_change=self.update_group_size,
+            label_style=ft.TextStyle(size=14),
             border=ft.InputBorder.OUTLINE,
         )
 
@@ -101,6 +126,7 @@ class GroupFormationView(UserControl):
             label="Number of Groups",
             width=150,
             on_change=self.update_group_num,
+            label_style=ft.TextStyle(size=14),
             border=ft.InputBorder.OUTLINE,
         )
 
@@ -116,7 +142,7 @@ class GroupFormationView(UserControl):
             text="Generate Groups",
             width=200,
             height=50,
-            on_click=self.form_groups,
+            on_click=self.handle_randomize_click,
         )
         self.copy_button = IconButton(
             icon=icons.COPY_ALL_ROUNDED,
@@ -125,11 +151,17 @@ class GroupFormationView(UserControl):
             tooltip="Copy to clipboard",
             on_click=self.copy_to_clipboard,
         )
-        self.output_label = Text("Generated Groups:", weight=ft.FontWeight.BOLD)
+        self.output_label = Row(
+            [
+                Text("Generated Groups:", weight=ft.FontWeight.BOLD),
+                self.copy_button,
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        )
         self.output_text = Container(
             content=Column(
                 controls=[],
-                spacing=5,
+                spacing=20,
                 expand=True,
                 scroll=ft.ScrollMode.AUTO,
             ),
@@ -137,6 +169,8 @@ class GroupFormationView(UserControl):
             padding=20,
             alignment=ft.alignment.top_left,
         )
+        self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
+        self.clear_sound = Audio(src="clear.mp3", autoplay=False)
         self.input_area = self._build_input_area()
         self.output_area = self._build_output_area()
         self.filter_area = self._build_filter_area()
@@ -205,6 +239,8 @@ class GroupFormationView(UserControl):
                     on_hover=self.show_draggable_cursor,
                 ),
                 self.output_area,
+                self.randomize_sound,
+                self.clear_sound,
             ],
             spacing=0,
             expand=True,
@@ -217,7 +253,13 @@ class GroupFormationView(UserControl):
         return Container(
             content=Column(
                 [
-                    Text("Enter names (one per line)", weight=ft.FontWeight.BOLD),
+                    Row(
+                        [
+                            Text("Enter names (one per line)", weight=ft.FontWeight.BOLD),
+                            self.save_list_button,
+                        ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    ),
                     Container(
                         content=self.input_area,
                         expand=True,
@@ -243,6 +285,7 @@ class GroupFormationView(UserControl):
                     Row(
                         controls=[
                             self.group_size_input,
+                            Text("OR", weight=ft.FontWeight.BOLD),
                             self.group_num_input,
                         ],
                         spacing=10,
@@ -299,11 +342,60 @@ class GroupFormationView(UserControl):
             alignment=ft.alignment.top_left,
         )
 
+    def handle_name_input(self, e):
+        print("e")
+        # Lấy giá trị từ tất cả các TextField trong output_text
+        used_names = []
+        for text_field in self.output_text.content.controls:
+            if isinstance(text_field, ft.TextField):
+                text_value = text_field.value.strip()
+                if text_value:
+                    used_names.extend(text_value.splitlines())
+
+        # Tạo danh sách còn lại dựa trên các tên ban đầu
+        name_only = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
+        counts = self.groupformer.counting_name(names_only=name_only)
+
+        # Trừ các tên đã sử dụng
+        for name in used_names:
+            if name in counts.keys():
+                counts[name] -= 1
+
+        # Lưu trạng thái cập nhật vào remaining_counts
+        self.remaining_counts = counts
+
+        # Kiểm tra tên vừa nhập
+        input_name = e.control.value.strip()
+        if input_name:
+            if input_name in self.remaining_counts and self.remaining_counts[input_name] > 0:
+                print("a")
+                # Hợp lệ, giảm số lần còn lại
+                self.remaining_counts[input_name] -= 1
+                self.error_message_manual = None
+            else:
+                print("b")
+                # Tên không hợp lệ
+                self.error_message_manual.value = f"Name '{input_name}' is already used up!"
+                e.control.value = ""  # Xóa giá trị không hợp lệ
+
+        # Cập nhật TextField cho giao diện hiện tại
+        for text_field in self.output_text.content.controls:
+            if isinstance(text_field, ft.TextField):
+                text_field.update()
+                self.output_text.update()
+                self.output_area.update()
+
+        # Cập nhật TextField hiện tại
+        e.control.update()
+        self.output_text.update()
+        self.output_area.update()
+
     def clear_result(self, e: ControlEvent) -> None:
         """Clear the generated result and disable the clear button."""
         self.output_text.content.controls.clear()
         self.manually_assigned_names = []
         self.existing_groups = None
+        self.create_empty_group_boxes(int(self.group_num_input.value))
 
         self.output_text.update()
         self.output_label.value = "Generated name:"
@@ -311,12 +403,34 @@ class GroupFormationView(UserControl):
         self.clear_result_button.update()
         self.output_area.update()
         self.clear_result_button.update()
+        self.clear_sound.play()
+
+    async def handle_save_list_click(self, e: ControlEvent) -> None:
+        """Temporarily changes the icon to show save confirmation. Kind of like animating :)) fun, y'know"""
+        self.save_list_button.icon = icons.BOOKMARK_ADDED
+        self.save_list_button.update()
+        await asyncio.sleep(3)
+        self.save_list_button.icon = icons.BOOKMARK_ADD_OUTLINED
+        self.save_list_button.update()
+
+    def handle_randomize_click(self, e: ControlEvent) -> None:
+        """Handles the randomize button click and plays a sound effect."""
+        self.randomize_sound.play()  # Play the sound effect
+        self.form_groups(e)  # Call the original logic
 
     def copy_to_clipboard(self, e: ControlEvent) -> None:
         """Copy generated names to clipboard."""
-        if self.output_text.value:
-            self.page.set_clipboard(self.output_text.value)
-            self.page.show_snack_bar(ft.SnackBar(content=Text("Copied to clipboard!")))
+        if self.output_text.content.controls:  # Kiểm tra nếu có nhóm trong output_text
+            # Duyệt qua các controls trong output_text để lấy nội dung
+            all_text = "\n\n".join([
+                f"{control.label}:\n{control.value}"  # Thêm tiêu đề nhóm (label) và nội dung
+                for control in self.output_text.content.controls
+                if isinstance(control, ft.TextField)
+            ])
+            # Sao chép toàn bộ nội dung vào clipboard
+            self.page.set_clipboard(all_text)
+            # Hiển thị thông báo
+            self.page.show_snack_bar(ft.SnackBar(content=ft.Text("Copied to clipboard!")))
 
     def update_selected_manual_group(self, e: ControlEvent) -> None:
         self.manual_group = e.control.value  # Lưu trạng thái mới
@@ -376,10 +490,10 @@ class GroupFormationView(UserControl):
                     Row(  # Header row for "Generated Groups" and Copy button
                         controls=[
                             self.output_label,  # "Generated Groups" label
-                            self.copy_button,
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
+                    self.error_message_manual,
                     Container(  # Scrollable section starts here
                         content=Column(
                             controls=[
@@ -401,7 +515,30 @@ class GroupFormationView(UserControl):
             width=self.right_column_width,
         )
 
+    def addition_update_group_size_group_num(self, e):
+        names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
+        total_names = len(names)
+
+        if self.last_updated == "group_num":
+            try:
+                num = int(self.group_num_input.value)
+                max_size = (total_names + num - 1) // num
+                self.group_size_input.value = str(max_size)
+                self.group_size_input.update()
+            except ValueError:
+                pass
+
+        elif self.last_updated == "group_size":
+            try:
+                size = int(self.group_size_input.value)
+                num_groups = (total_names + size - 1) // size
+                self.group_num_input.value = str(num_groups)
+                self.group_num_input.update()
+            except ValueError:
+                pass
+
     def update_group_size(self, e):
+        self.last_updated = "group_size"
         try:
             # Lấy danh sách các tên
             names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
@@ -428,6 +565,7 @@ class GroupFormationView(UserControl):
             e.control.update()
 
     def update_group_num(self, e):
+        self.last_updated = "group_num"
         try:
             # Lấy danh sách các tên
             names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
@@ -485,8 +623,10 @@ class GroupFormationView(UserControl):
         if self.selected_gender_filter == "none":
             # Không lọc giới tính
             names = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
+            names_only = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
         else:
             # Lọc giới tính: trả về danh sách tuple (name, gender)
+            names_only = [n.strip() for n in self.names_input.value.splitlines() if n.strip()]
             names = self.groupformer.get_cleaned_names(self.names_input.value, self.gender_input.value)
 
         total_names = len(names)
@@ -509,8 +649,8 @@ class GroupFormationView(UserControl):
 
         # check thông báo không đủ nam/nữ:
         if self.selected_gender_filter != "none":
-            total_male = len([name for name, gender in names if gender == "male"])
-            total_female = len([name for name, gender in names if gender == "female"])
+            total_male = len([name for name, gender in names if (gender == "male" or gender == "nam")])
+            total_female = len([name for name, gender in names if (gender == "female" or gender == "nữ")])
 
             if total_male < male_count * group_num:
                 self.error_message.value = (
@@ -523,7 +663,7 @@ class GroupFormationView(UserControl):
                     f"Not enough females! Required: {female_count * group_num}, Available: {total_female}"
                 )
                 self.error_message.update()
-            else:
+            elif total_male >= male_count * group_num and total_female >= female_count * group_num:
                 self.error_message.value = ""
         # Check thông báo nếu đủ giới tính
         self.error_message.update()
@@ -539,6 +679,7 @@ class GroupFormationView(UserControl):
 
         # chia nhóm có manual
         elif self.manual_group != "none":
+            names_count = self.groupformer.counting_name(names_only=names_only)
             # no gender
             if self.existing_groups is None and self.selected_gender_filter == "none":
                 # print('is none')
@@ -556,10 +697,19 @@ class GroupFormationView(UserControl):
 
                 self.manually_assigned = manually_assigned
 
-            remaining_names = []
+            # cập nhật names_count
+            for name in self.manually_assigned:
+                if name in names_count:
+                    # Giảm số lần xuất hiện của name trong names_count
+                    names_count[name] -= 1
+                    if names_count[name] <= 0:
+                        del names_count[name]
 
+            # số tên còn lại
+            remaining_names = []
             if self.selected_gender_filter == "none":
-                remaining_names = [name for name in names if name not in self.manually_assigned]
+                for name, count in names_count.items():
+                    remaining_names.extend([name] * count)
                 generated_groups = self.groupformer.manual_group_without_gender(
                     remaining_names=remaining_names,
                     existing_group=self.existing_groups,
@@ -604,7 +754,7 @@ class GroupFormationView(UserControl):
         self.output_area.update()
         self.output_text.update()
         for i, group in enumerate(generated_groups, 1):
-            group_text = "\n".join([f"{name}" for name in group])  # Create the text for the group
+            group_text = "\n".join([f"• {name}" for name in group])  # Create the text for the group
 
             # Use a TextField to display the group information
             group_box = TextField(
@@ -615,6 +765,7 @@ class GroupFormationView(UserControl):
                 # height=100,  # Adjust height of the TextField
                 text_align=ft.TextAlign.LEFT,  # Align text to the left
                 border=ft.border.all(1, ft.colors.GREY_300),  # Optional: Add border for styling
+                on_change=self.handle_name_input,
             )
             self.output_text.content.controls.append(group_box)
 

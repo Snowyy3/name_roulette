@@ -9,19 +9,6 @@ class GroupFormer:
     def group_formation(self, names: list[str], group_size: int = None, num_groups: int = None):
         """
         Divides a list of names into groups based on either group size or the number of groups.
-
-        Args:
-            names (list[str]): A list of names to be divided into groups.
-            group_size (int, optional): The desired number of people per group. Defaults to None.
-            num_groups (int, optional): The desired number of groups. Defaults to None.
-
-        Raises:
-            ValueError: If neither 'group_size' nor 'num_groups' is provided.
-            TypeError: If 'group_size' or 'num_groups' is not an integer.
-            ValueError: If 'group_size' or 'num_groups' is negative or zero.
-
-        Returns:
-            list[list[str]]: A list of groups.
         """
         if not names:
             return []
@@ -42,6 +29,9 @@ class GroupFormer:
             raise ValueError("'num_groups' must be a positive integer.")
 
         rd.shuffle(names)  # Shuffle names to randomize grouping
+
+        # Cập nhật lại group_size và num_groups dựa trên số lượng tên
+        group_size, num_groups = self.update_group_size_on_name_addition(names, group_size, num_groups)
 
         # Adjust group count and size
         if num_groups is None:
@@ -73,6 +63,16 @@ class GroupFormer:
 
         return groups
 
+    def update_group_size_on_name_addition(self, names: list[str], group_size: int, num_groups: int):
+        """Automatically updates group size based on the number of names and the number of groups."""
+        if num_groups is not None:
+            # Update group size based on num_groups
+            group_size = (len(names) + num_groups - 1) // num_groups
+        # elif group_size is not None:
+        #     # Update num_groups based on group size
+        #     num_groups = (len(names) + group_size - 1) // group_size
+
+        return group_size, num_groups
     def handle_uneven_groups(
         self, groups: list[list[str]], remaining_members: list[str], distribute_randomly: bool = True
     ) -> list[list[str]]:
@@ -200,6 +200,14 @@ class GroupFormer:
 
         return groups
 
+    def counting_name(self,names_only: list[str]) -> dict:
+            names_count = dict()
+            for name_only in names_only:
+                if name_only in names_count.keys():
+                    names_count[name_only] +=1
+                else:
+                    names_count[name_only] = 1
+            return names_count
     def manual_group_without_gender(
         self, remaining_names: list[str], existing_group: list[list[str]], group_size: int, num_groups: int
     ) -> list[list[str]]:
