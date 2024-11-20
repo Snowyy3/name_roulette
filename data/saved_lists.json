@@ -32,8 +32,8 @@
                 "name": "New List 02",
                 "items": [
                     {
-                        "name": "Elon Musk",
                         "id": "1",
+                        "name": "Elon Musk",
                         "gender": "Female"
                     }
                 ]
@@ -42,18 +42,18 @@
                 "name": "New List 003",
                 "items": [
                     {
-                        "name": "SpaceX Flight 5",
                         "id": "1",
+                        "name": "SpaceX Flight 5",
                         "gender": "Male"
                     },
                     {
-                        "name": "oh what",
                         "id": "2",
+                        "name": "aaaa",
                         "gender": "female"
                     },
                     {
-                        "name": "missing bruh",
-                        "id": "3"
+                        "id": "3",
+                        "name": "#f9f9f9"
                     }
                 ]
             }

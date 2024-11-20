@@ -174,6 +174,10 @@ class ListController:
             logger.error(f"Error setting active list: {e}")
             raise
 
+    def get_active_list(self) -> Optional[ListModel]:
+        """Get the currently active list"""
+        return self.selected_list
+
     def _notify_views(self) -> None:
         """Notify dependent views of list changes"""
         try:

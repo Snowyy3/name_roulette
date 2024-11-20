@@ -410,7 +410,7 @@ class NameGenerationView(UserControl):
             self.male_count_input.value,
             self.female_count_input.value,
         )
-        
+
         self.randomize_button.disabled = not is_valid
         self.randomize_button.update()
 
@@ -500,10 +500,14 @@ class NameGenerationView(UserControl):
         """Load and display the active list"""
         try:
             logger.info("Loading active list in NameGenerationView")
-            self.current_list = self.controller.get_active_list()
-            if self.current_list:
+            active_list = self.controller.get_active_list()
+            if active_list:
+                self.current_list = active_list
                 self._populate_list_data()
                 self.update()
+                logger.info(f"Successfully loaded active list: {active_list.name}")
+            else:
+                logger.warning("No active list to load")
         except Exception as e:
             logger.error(f"Error loading active list: {e}")
 
@@ -513,7 +517,12 @@ class NameGenerationView(UserControl):
             return
 
         try:
-            names, genders = self.controller.format_list_data(self.current_list)
+            # Split names and genders into separate fields
+            names = []
+            genders = []
+            for item in self.current_list.items:
+                names.append(item["name"])
+                genders.append(item.get("gender", ""))
 
             # Update the input fields
             self.names_input.value = "\n".join(names)
@@ -522,6 +531,7 @@ class NameGenerationView(UserControl):
             # Update the UI
             self.names_input.update()
             self.gender_input.update()
+            self.validate_input()
 
         except Exception as e:
             logger.error(f"Error populating list data: {e}")

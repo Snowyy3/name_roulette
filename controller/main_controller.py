@@ -80,6 +80,10 @@ class MainController:
         """Set active list and update relevant views"""
         self.list_controller.set_active_list(list_data)
 
+    def get_active_list(self):
+        """Get active list from list controller"""
+        return self.list_controller.get_active_list()
+
     def navigate_to_name_picker(self):
         """Navigate to name picker view"""
         logger.info("Navigating to name picker")
@@ -181,3 +185,32 @@ class MainController:
             logger.error(f"Error forming groups: {e}", exc_info=True)
             self.page.show_snack_bar(ft.SnackBar(content=ft.Text("Error forming groups!")))
             return []
+
+    # Add these delegation methods
+    def validate_list(self, list_data):
+        """Delegate list validation to ListController"""
+        return self.list_controller.validate_list(list_data)
+
+    def add_item_to_list(self, list_model, name, gender=None):
+        """Delegate add item operation to ListController"""
+        return self.list_controller.add_item_to_list(list_model, name, gender)
+
+    def update_item_in_list(self, list_model, item_id, name, gender=None):
+        """Delegate update item operation to ListController"""
+        return self.list_controller.update_item_in_list(list_model, item_id, name, gender)
+
+    def delete_item_from_list(self, list_model, item_id):
+        """Delegate delete item operation to ListController"""
+        return self.list_controller.delete_item_from_list(list_model, item_id)
+
+    def get_all_lists(self):
+        """Delegate get all lists operation to ListController"""
+        return self.list_controller.get_all_lists()
+
+    def get_list(self, list_id):
+        """Delegate get list operation to ListController"""
+        return self.list_controller.get_list(list_id)
+
+    def save_list(self, list_data):
+        """Delegate save list operation to ListController"""
+        return self.list_controller.save_list(list_data)

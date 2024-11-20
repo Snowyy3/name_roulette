@@ -285,10 +285,13 @@ class EditListView(UserControl):
             if self.controller.save_list(self.list_model):
                 self.has_unsaved_changes = False
                 self.original_model = ListModel(self.list_model.to_dict())
-                self.page.show_snack_bar(
-                    SnackBar(content=Text("Changes saved successfully!"), bgcolor=ft.colors.SUCCESS)
-                )
+                # Change SUCCESS to specific color code
+                self.page.show_snack_bar(SnackBar(content=Text("Changes saved successfully!"), bgcolor="#4CAF50"))
                 return True
+            return False
+        except AttributeError as ae:
+            logger.error(f"Controller method not found: {ae}")
+            self._handle_error("Controller configuration error", ae)
             return False
         except Exception as e:
             self._handle_error("Error saving list", e)
@@ -439,14 +442,21 @@ class EditListView(UserControl):
 
     def _handle_add_item(self, e):
         """Handle adding a new item"""
-        success, new_item, error = self.controller.add_item_to_list(self.list_model, "")
-        if success:
-            self.filtered_items.append(new_item)
-            self._check_for_changes()
-            self._update_items_table()
-            self._handle_edit_item(new_item)
-        else:
-            self._handle_error("Error adding item", Exception(error))
+        try:
+            # Change to provide a default name
+            success, new_item, error = self.controller.add_item_to_list(self.list_model, "New Item")
+            if success:
+                self.filtered_items.append(new_item)
+                self.mark_as_changed()  # Mark changes
+                self._update_items_table()
+                self._handle_edit_item(new_item)  # Open edit dialog right away
+            else:
+                self._handle_error("Error adding item", Exception(error))
+        except AttributeError as ae:
+            logger.error(f"Controller method not found: {ae}")
+            self._handle_error("Controller configuration error", ae)
+        except Exception as e:
+            self._handle_error("Error adding item", e)
 
     def _handle_edit_item(self, item):
         """Handle editing an item with validation"""
@@ -544,7 +554,8 @@ class EditListView(UserControl):
     def _handle_error(self, message: str, error: Exception):
         """Handle errors uniformly"""
         logger.error(f"{message}: {error}")
-        self.page.show_snack_bar(SnackBar(content=Text(f"{message}!"), bgcolor=ft.colors.ERROR))
+        # Change ERROR to specific color code
+        self.page.show_snack_bar(SnackBar(content=Text(f"{message}!"), bgcolor="#EF5350"))
 
     def _show_dialog(self, dialog):
         """Show a dialog"""
@@ -603,3 +614,8 @@ class EditListView(UserControl):
             self.list_name_field.error_text = None  # Clear error when name is not empty
             self.list_name_field.update()
             return True
+
+    # Add new method to handle success messages
+    def _show_success(self, message: str):
+        """Show success message"""
+        self.page.show_snack_bar(SnackBar(content=Text(message), bgcolor="#4CAF50"))
