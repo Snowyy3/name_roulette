@@ -60,7 +60,7 @@ This project is currently restricted to only group 2 members of Basic programmin
 
 ## 📄 License
 
-This project is licensed under the [MIT License](link-to-license).
+This project is licensed under the [Apache 2.0](https://github.com/Snowyy3/name_roulette?tab=Apache-2.0-1-ov-file).
 
 
 ## 📞 Contact
