@@ -4,7 +4,7 @@ import os
 
 
 class UserAuthentication:
-    def __init__(self, file_path=r"data/users.json"):
+    def __init__(self, file_path=r"assets/users.json"):
         """Initialize user authentication with users file path."""
         self.file_path = file_path
         self.users = self.load_users()

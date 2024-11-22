@@ -30,7 +30,7 @@ class ListController:
     def _load_lists(self) -> None:
         """Load lists for current user from saved_lists.json"""
         try:
-            with open("data/saved_lists.json", "r") as file:
+            with open("assets/saved_lists.json", "r") as file:
                 data = json.load(file)
 
             username = self._get_current_username()
@@ -59,7 +59,7 @@ class ListController:
     def _create_initial_file(self):
         """Create initial saved_lists.json structure"""
         initial_data = {"users": {}, "guest": {"lists": {}}}
-        with open("data/saved_lists.json", "w") as file:
+        with open("assets/saved_lists.json", "w") as file:
             json.dump(initial_data, file, indent=4)
         self.lists = []
 
@@ -91,7 +91,7 @@ class ListController:
     def _save_lists_to_file(self, username: str) -> None:
         """Save all lists to file for given username"""
         try:
-            with open("data/saved_lists.json", "r+") as file:
+            with open("assets/saved_lists.json", "r+") as file:
                 data = json.load(file)
 
                 # Get correct section based on user type
@@ -134,7 +134,7 @@ class ListController:
             self.lists = [lst for lst in self.lists if lst.id != list_id]
 
             # Remove from file
-            with open("data/saved_lists.json", "r+") as file:
+            with open("assets/saved_lists.json", "r+") as file:
                 data = json.load(file)
 
                 if username == "guest":

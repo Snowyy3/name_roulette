@@ -1,6 +1,21 @@
 # 🎲✨ Name Roulette: Spin the Wheel of Chance & Efficiency! 🪄
 
-## About Name Roulette
+## Table of Contents
+
+- 📢 [**About Name Roulette**](#about-name-roulette)
+- 🤔 [**Why Choose Name Roulette?**](#-why-choose-name-roulette)
+- 🛠️ [Skills Enhanced](#-skills-enhanced)
+- 🚀 [**Getting Started**](#-getting-started)
+    - [Portable App](#portable-app)
+    - [Source Code](#source-code)
+        - [Method 1: Using Git Clone](#method-1-using-git-clone)
+        - [Method 2: Downloading as a ZIP File](#method-2-downloading-as-a-zip-file)
+- 🤝 [Contributing](#-contributing)
+- 📄 [License](#-license)
+- 📞 [Contact](#-contact)
+
+
+## **📢 About Name Roulette**
 
 👋 Say goodbye to the headaches of manual selections and hello to **Name Roulette**, your ultimate solution for generating random names and creating balanced groups! Whether you're a teacher orchestrating classroom activities, a project manager assembling dream teams, or anyone seeking a fair and efficient way to make random selections, Name Roulette has you covered.
 
@@ -11,8 +26,7 @@
 -   **Representative Picking:** Pre-assign individuals to specific groups and let Name Roulette handle the rest, guaranteeing a harmonious blend of pre-determined and random selections.
 -   **Intuitive & Modern UI:** Enjoy a seamless and engaging experience with our polished and user-friendly interface, designed to make your selection process a breeze.
 
-
-## 🤔 Why Choose Name Roulette?
+## **🤔 Why Choose Name Roulette?**
 
 <ins>Let's face it:</ins>  The need for random and fair selections arises constantly in various settings. Traditional methods, like picking based on dates or subjective preferences, can be time-consuming, inefficient, and prone to bias. 
 
@@ -36,8 +50,7 @@ Name Roulette stands out from the crowd by offering a laser-focused, intuitive, 
 -   📈 **Boost Efficiency & Productivity:** Streamline your workflow and make quicker decisions with our intuitive interface.
 -   🎉 **Enhance Engagement & Fun:** Inject a touch of excitement and gamification into your selection process with our "roulette" theme.
 
-
-## 🛠️ Skills Enhanced
+## **🛠️ Skills Enhanced**
 
 Embarking on this project provides a golden opportunity to cultivate and refine a diverse range of valuable skills:
 
@@ -47,23 +60,61 @@ Embarking on this project provides a golden opportunity to cultivate and refine 
 -   **Version Control (Git) Proficiency:** Master the fundamentals of Git for efficient code management, collaboration, and version tracking.
 -   **UI/UX Design Fundamentals:** Learn about designing user-friendly and visually appealing interfaces that provide an exceptional user experience.
 
+## **🚀 Getting Started**
 
-## 🚀 Getting Started 
+### **Portable app**
 
-(Instructions on how to run the application will be added here later)
+1. Go to the [Releases](https://github.com/Snowyy3/name_roulette/releases) section of the repository.
+2. Download the latest `Name Roulette (Portable app).zip` file.
+3. Unzip the downloaded .zip file, we get a folder.
+4. Inside the folder, run `Name Roulette.exe`.
 
+> [!TIP]
+> You can right click `Name Roulette.exe`, select `Create shortcut` to have a shortcut that you can move anywhere. It can be moved to Desktop, or pinned to the Taskbar for easy access!
 
-## 🤝 Contributing
+### **Source code**
 
-This project is currently restricted to only group 2 members of Basic programming for Data Science course.
+You can set up the project source code in two ways:
 
+#### Method 1: Using Git Clone
 
-## 📄 License
+1. Open your terminal or command prompt.
+2. Clone the repository using the following command *(you can navigate to your desired directory before running this)*:
+        ```sh
+        git clone https://github.com/Snowyy3/name_roulette.git
+        ```
+3. Navigate to the project directory:
+        ```sh
+        cd name_roulette
+        ```
+4. Install the required dependencies:
+        ```sh
+        pip install -r requirements.txt
+        ```
+        *The only major dependency is `pip install flet`, but it's better to use `requirements.txt` to avoid any unexpected errors.*
 
-This project is licensed under the [Apache 2.0](https://github.com/Snowyy3/name_roulette?tab=Apache-2.0-1-ov-file).
+#### Method 2: Downloading as a ZIP File
 
+1. Go to the [repository](https://github.com/Snowyy3/name_roulette).
+2. Click on the `Code` button and select `Download ZIP`.
+3. Extract the downloaded ZIP file.
+4. Open your terminal or command prompt and navigate to the extracted directory.
+5. Install the required dependencies:
+        ```sh
+        pip install -r requirements.txt
+        ```
+        *The only major dependency is `pip install flet`, but it's better to use `requirements.txt` to avoid any unexpected errors.*
 
-## 📞 Contact
+## **🤝 Contributing**
 
-For now, you can open an issue, open a pull request, or DM the repo owner.
+You are free to either:
+- Open an issue
+- Fork this repository, modify, then open a pull request here
 
+## **📄 License**
+
+This project is licensed under the [Apache-2.0 license](https://github.com/Snowyy3/name_roulette?tab=Apache-2.0-1-ov-file).
+
+## **📞 Contact**
+
+You can open an issue, open a pull request, or DM the repo owner.
