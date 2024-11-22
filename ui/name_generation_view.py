@@ -15,10 +15,13 @@ from flet import (
     Divider,
     IconButton,
     icons,
-    Audio,
+    AlertDialog,
+    # Audio,
 )
+from model.list_model import ListModel
 import asyncio
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,34 @@ class NameGenerationView(UserControl):
         super().__init__()
         self.controller = controller
         self.current_list = None
+        self.list_model = ListModel()
+        self.list_name_field = TextField(
+            label="List Name",
+            value="New list",
+            expand=True,
+            height=40,  # Fixed height for better appearance
+        )
+        self.save_dialog = AlertDialog(
+            modal=True,
+            title=Text("Save List", size=20, weight="bold"),
+            content=Container(
+                content=Column(
+                    controls=[
+                        Text("Enter a name for the list:", size=16),
+                        self.list_name_field,
+                    ],
+                    spacing=10,
+                    tight=True,
+                ),
+                width=400,  # Fixed width for the dialog
+                padding=ft.padding.all(10),  # Add some padding
+            ),
+            actions=[
+                ft.TextButton("Cancel", on_click=self._close_save_dialog),
+                ft.TextButton("Save", on_click=self._save_list),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
 
         # Initialize layout dimensions
         self._init_layout_dimensions()
@@ -535,3 +566,64 @@ class NameGenerationView(UserControl):
 
         except Exception as e:
             logger.error(f"Error populating list data: {e}")
+
+    def handle_save_list_click(self, e: ControlEvent) -> None:
+        """Handle save list button click"""
+        # Show save dialog
+        self.page.dialog = self.save_dialog
+        self.save_dialog.open = True
+        self.page.update()
+
+    def _close_save_dialog(self, e):
+        """Close the save dialog"""
+        self.save_dialog.open = False
+        self.page.update()
+
+    def _save_list(self, e):
+        """Save the list with data from input fields"""
+        try:
+            # Create list data from inputs
+            names = [name.strip() for name in self.names_input.value.split("\n") if name.strip()]
+            genders = []
+            if self.gender_input.value:
+                genders = [gender.strip() for gender in self.gender_input.value.split("\n")]
+                # Pad genders list if shorter than names
+                genders.extend([""] * (len(names) - len(genders)))
+
+            # Create items list
+            items = []  # Initialize items list
+            for i, name in enumerate(names):
+                item = {"id": str(uuid.uuid4()), "name": name}
+                if i < len(genders) and genders[i]:
+                    item["gender"] = genders[i]
+                items.append(item)
+
+            # Create list model
+            list_data = {"name": self.list_name_field.value or "New list", "items": items}
+
+            # Save using controller
+            if self.controller.save_list(list_data):
+                self.page.show_snack_bar(ft.SnackBar(content=Text("List saved successfully!")))
+            else:
+                self.page.show_snack_bar(ft.SnackBar(content=Text("Failed to save list")))
+
+        except Exception as ex:
+            logger.error(f"Error saving list: {ex}")
+            self.page.show_snack_bar(ft.SnackBar(content=Text("An error occurred while saving")))
+
+        finally:
+            self._close_save_dialog(None)
+
+        # Show save animation
+        self.save_list_button.icon = icons.BOOKMARK_ADDED
+        self.save_list_button.update()
+        self.page.update()
+
+        # Reset icon after delay
+        asyncio.create_task(self._reset_save_icon())
+
+    async def _reset_save_icon(self):
+        """Reset the save icon after a delay"""
+        await asyncio.sleep(2)
+        self.save_list_button.icon = icons.BOOKMARK_ADD_OUTLINED
+        self.save_list_button.update()
