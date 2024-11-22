@@ -80,18 +80,24 @@ You can set up the project source code in two ways:
 
 1. Open your terminal or command prompt.
 2. Clone the repository using the following command *(you can navigate to your desired directory before running this)*:
-        ```sh
-        git clone https://github.com/Snowyy3/name_roulette.git
-        ```
-3. Navigate to the project directory:
-        ```sh
-        cd name_roulette
-        ```
-4. Install the required dependencies:
-        ```sh
-        pip install -r requirements.txt
-        ```
-        *The only major dependency is `pip install flet`, but it's better to use `requirements.txt` to avoid any unexpected errors.*
+
+    ```sh
+    git clone https://github.com/Snowyy3/name_roulette.git
+    ```
+   
+4. Navigate to the project directory:
+
+    ```sh
+    cd name_roulette
+    ```
+   
+6. Install the required dependencies:
+
+    ```sh
+    pip install -r requirements.txt
+    ```
+   
+    *The only major dependency is `pip install flet`, but it's better to use `requirements.txt` to avoid any unexpected errors.*
 
 #### Method 2: Downloading as a ZIP File
 
@@ -100,10 +106,12 @@ You can set up the project source code in two ways:
 3. Extract the downloaded ZIP file.
 4. Open your terminal or command prompt and navigate to the extracted directory.
 5. Install the required dependencies:
-        ```sh
-        pip install -r requirements.txt
-        ```
-        *The only major dependency is `pip install flet`, but it's better to use `requirements.txt` to avoid any unexpected errors.*
+
+   ```sh
+    pip install -r requirements.txt
+    ```
+   
+    *The only major dependency is `pip install flet`, but it's better to use `requirements.txt` to avoid any unexpected errors.*
 
 ## **🤝 Contributing**
 
