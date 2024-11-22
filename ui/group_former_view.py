@@ -8,7 +8,7 @@ from flet import (
     Text,
     TextField,
     ElevatedButton,
-    Audio,
+    # Audio,
     ControlEvent,
     IconButton,
     icons,
@@ -47,8 +47,8 @@ class GroupFormationView(UserControl):
     def _initialize_ui_components(self):
         """Initialize all UI components"""
         # Audio components
-        self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
-        self.clear_sound = Audio(src="clear.mp3", autoplay=False)
+        # self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
+        # self.clear_sound = Audio(src="clear.mp3", autoplay=False)
 
         # Setup individual components first
         self._setup_input_fields()
@@ -239,18 +239,18 @@ class GroupFormationView(UserControl):
                 names,
                 existing_groups=self.existing_groups,
                 group_size=group_size,
-                remaining_names = self.remaining_names,
+                remaining_names=self.remaining_names,
                 group_num=group_num,
                 gender_filter=self.selected_gender_filter,
                 male_count=male_count,
                 female_count=female_count,
                 manual_group=self.manual_group,
-                output_text = self.output_text.content.controls,     
+                output_text=self.output_text.content.controls,
             )
-            if self.manual_group !='none':
-                generated_groups = ans['generated_groups']
-                self.existing_groups = ans['existing_groups']
-                self.remaining_names = ans['remaining_names']
+            if self.manual_group != "none":
+                generated_groups = ans["generated_groups"]
+                self.existing_groups = ans["existing_groups"]
+                self.remaining_names = ans["remaining_names"]
 
                 self._update_output_display(generated_groups)
             else:
@@ -344,8 +344,8 @@ class GroupFormationView(UserControl):
                     on_hover=self.show_draggable_cursor,
                 ),
                 self.output_area,
-                self.randomize_sound,
-                self.clear_sound,
+                # self.randomize_sound,
+                # self.clear_sound,
             ],
             spacing=0,
             expand=True,
@@ -425,7 +425,7 @@ class GroupFormationView(UserControl):
         self.clear_result_button.update()
         self.output_area.update()
         self.clear_result_button.update()
-        self.clear_sound.play()
+        # self.clear_sound.play()
 
     async def handle_save_list_click(self, e: ControlEvent) -> None:
         """Temporarily changes the icon to show save confirmation. Kind of like animating :)) fun, y'know"""
@@ -437,7 +437,7 @@ class GroupFormationView(UserControl):
 
     def handle_randomize_click(self, e: ControlEvent) -> None:
         """Handles the randomize button click and plays a sound effect."""
-        self.randomize_sound.play()  # Play the sound effect
+        # self.randomize_sound.play()  # Play the sound effect
         self.form_groups()  # Removed 'e' parameter
 
     def copy_to_clipboard(self, e: ControlEvent) -> None:

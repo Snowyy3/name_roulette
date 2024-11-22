@@ -163,8 +163,8 @@ class NameGenerationView(UserControl):
 
     def _init_audio_components(self):
         """Initialize audio components"""
-        self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
-        self.clear_sound = Audio(src="clear.mp3", autoplay=False)
+        # self.randomize_sound = Audio(src="randomize.mp3", autoplay=False)
+        # self.clear_sound = Audio(src="clear.mp3", autoplay=False)
 
     def move_left_divider(self, e: ft.DragUpdateEvent):
         """Handle dragging for the left divider."""
@@ -214,12 +214,12 @@ class NameGenerationView(UserControl):
 
     def handle_randomize_click(self, e: ControlEvent) -> None:
         """Handles the randomize button click and plays a sound effect."""
-        self.randomize_sound.play()  # Play the sound effect
+        # self.randomize_sound.play()  # Play the sound effect
         self.generate_random_name(e)  # Call the original logic
 
     def handle_clear_click(self, e: ControlEvent) -> None:
         """Handles the Clear Result button click and plays a sound effect."""
-        self.clear_sound.play()  # Play the sound effect
+        # self.clear_sound.play()  # Play the sound effect
         self.clear_result(e)  # Call the original clear result logic
 
     def build(self) -> Row:
@@ -241,8 +241,8 @@ class NameGenerationView(UserControl):
                     on_hover=self.show_draggable_cursor,
                 ),
                 self.output_area,  # Right column
-                self.randomize_sound,
-                self.clear_sound,
+                # self.randomize_sound,
+                # self.clear_sound,
             ],
             spacing=0,
             expand=True,
