@@ -25,10 +25,13 @@ class GroupFormationController:
     def form_groups(self, names: list[str], **kwargs) -> list[list[str]]:
         """Coordinate group formation between view and model."""
         try:
-            if kwargs.get("gender_filter") != "none":
+            if kwargs.get("gender_filter") != "none" and kwargs.get('manual_group') == 'none':
                 return self._form_groups_with_gender(names, **kwargs)
-            elif kwargs.get("manual_group") != "none":
+            elif kwargs.get("manual_group") != "none" and kwargs.get("gender_filter") == "none":
                 return self._form_groups_with_manual(names, **kwargs)
+            elif kwargs.get("gender_filter") != "none" and kwargs.get("manual_group") != "none":
+                print('đã vào đây')
+                return self.manual_with_gender(names, **kwargs )
             else:
                 return self.group_former.group_formation(
                     names, group_size=kwargs.get("group_size"), num_groups=kwargs.get("group_num")
@@ -58,6 +61,7 @@ class GroupFormationController:
                 group_size=group_size,
                 num_groups=num_groups,
             )
+            
         except Exception as e:
             logger.error(f"Error in gender-based group formation: {e}")
             raise ValueError(f"Failed to form gender-based groups: {str(e)}")
@@ -68,10 +72,33 @@ class GroupFormationController:
             # Ensure we have valid lists
             if names is None:
                 names = []
-
+            elif names is not None:
+                names_counting = self.group_former.counting_name(names_only=names)
+            
             existing_groups = kwargs.get("existing_groups")
+            remaining_names = kwargs.get('remaining_names')
+            ouput_text = kwargs.get('output_text')
+            num_groups = kwargs.get("group_num")
+
+            # lấy existing_groups, remainging_names
             if existing_groups is None:
-                existing_groups = []
+                existing_groups = [[] for _ in range(num_groups)]
+                manualy_assigned = []
+                k = 0
+                for group_box in ouput_text:
+                    group_members = [n.strip() for n in group_box.value.splitlines() if n.strip()]
+                    existing_groups[k].extend(group_members)
+                    manualy_assigned.extend(group_members)
+                    k+=1
+                             
+                for name in manualy_assigned:
+                    if name in names_counting:
+                        names_counting[name] -= 1
+                        if names_counting[name] <= 0:
+                            del names_counting[name]
+                remaining_names = []
+                for name, count in names_counting.items():
+                    remaining_names.extend([name] * count)
 
             # Validate numeric parameters
             group_size = kwargs.get("group_size")
@@ -84,16 +111,47 @@ class GroupFormationController:
 
             logger.debug(f"Manual group formation with {len(names)} names into {num_groups} groups")
 
-            return self.group_former.manual_group_without_gender(
-                remaining_names=names,
+            generated_groups = self.group_former.manual_group_without_gender(
+                remaining_names=remaining_names,
                 existing_group=existing_groups,
                 group_size=group_size,
                 num_groups=num_groups,
             )
+            return {'generated_groups': generated_groups, 'existing_groups': existing_groups, 'remaining_names': remaining_names}
         except Exception as e:
             logger.error(f"Error in manual group formation: {e}")
             # Return empty list instead of None to prevent iteration errors
             return []
+
+    def manual_with_gender(self,
+        names, **kwargs):
+        # lấy input
+        existing_groups = kwargs.get("existing_groups")
+        remaining_names = kwargs.get('remaining_names')
+        ouput_text = kwargs.get('output_text')
+        group_size = kwargs.get("group_size")
+        group_num = kwargs.get('group_num')
+        male_count = kwargs.get("male_count")
+        female_count = kwargs.get("female_count")
+        if existing_groups is None:
+            print('đã vào exsitng none')
+            get_group_names = self.group_former.get_groups_remainging_names(names=names, output_text=ouput_text,group_num=group_num)
+            print('đã vượt qua lấy exiting và remaing names')
+            existing_groups = get_group_names['existing_groups']
+            remaining_names = get_group_names['remaining_names']
+
+        # chia
+        generated_groups = self.group_former.manual_group_with_gender(
+            remaining_names= remaining_names,
+            existing_group= existing_groups,
+            male_count= male_count,
+            female_count= female_count,
+            group_size= group_size
+        )
+        print('gênrate', generated_groups)
+        return {'generated_groups': generated_groups, 'existing_groups':existing_groups, 'remaining_names': remaining_names}
+
+
 
     def distribute_remaining(
         self, groups: list[list[str]], remaining_members: list[str], distribute_randomly: bool = True

@@ -93,8 +93,8 @@ class GroupFormer:
 
         # Filter out empty groups
         groups = [g for g in groups if g]
-
         return groups
+        #return {'generated_groups': groups, 'exisiting_groups': None, 'remaining_names': None}
 
     def update_group_size_on_name_addition(self, names: list[str], group_size: int, num_groups: int):
         """Automatically updates group size based on the number of names and the number of groups."""
@@ -179,6 +179,7 @@ class GroupFormer:
         num_groups: int = None,
     ) -> list[list[str]]:
         """Generate gender-balanced groups"""
+        print(names)
         if not names:
             return []
 
@@ -255,15 +256,6 @@ class GroupFormer:
     ) -> list[list[str]]:
         """Handle manual group formation with validation and edge cases"""
         # Validate inputs
-        if not isinstance(remaining_names, list):
-            remaining_names = []
-
-        if not isinstance(existing_group, list):
-            existing_group = [[] for _ in range(num_groups)]
-
-        if len(existing_group) < num_groups:
-            # Add empty groups if needed
-            existing_group.extend([[] for _ in range(num_groups - len(existing_group))])
 
         # Create copy and proceed with distribution
         rd.shuffle(remaining_names)
@@ -299,6 +291,22 @@ class GroupFormer:
 
         return error_text
 
+    def get_groups_remainging_names(self, names,output_text, group_num ):
+        existing_groups = [[] for _ in range(group_num)]
+        manually_assigned = []
+        k = 0
+        for group_box in output_text:
+            group_memberss = [n.strip() for n in group_box.value.splitlines() if n.strip()]
+            group_members = [
+                        (name, gender) for name, gender in names if name in group_memberss
+                    ]  # list các tuple(assigned_name, gender)
+            existing_groups[k].extend(group_members)
+            manually_assigned.extend(group_memberss)
+            k += 1
+        remaining_names = [(name, gender) for name, gender in names if name not in self.manually_assigned]
+
+        return {'existing_groups': existing_groups, 'remaining_names': remaining_names}
+
     def manual_group_with_gender(
         self,
         remaining_names: list[tuple[str, str]],
@@ -306,7 +314,6 @@ class GroupFormer:
         male_count: int,
         female_count: int,
         group_size: int,
-        num_groups: int,
     ) -> list[list[str]]:
         # Phân loại remaining_names theo giới tính
         males = [name for name, gender in remaining_names if gender.lower() == "male"]

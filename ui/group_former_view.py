@@ -33,6 +33,7 @@ class GroupFormationView(UserControl):
         self.manual_group = "none"
         self.manually_assigned_names = []
         self.existing_groups = None
+        self.remaining_names = []
         self.current_list = None
         self.remaining_counts = None
         self.last_updated = None
@@ -234,18 +235,26 @@ class GroupFormationView(UserControl):
                 )
 
             # Delegate to controller with all parameters
-            generated_groups = self.controller.form_groups(
+            ans = self.controller.form_groups(
                 names,
+                existing_groups=self.existing_groups,
                 group_size=group_size,
+                remaining_names = self.remaining_names,
                 group_num=group_num,
                 gender_filter=self.selected_gender_filter,
                 male_count=male_count,
                 female_count=female_count,
                 manual_group=self.manual_group,
-                existing_groups=self.existing_groups,
+                output_text = self.output_text.content.controls,     
             )
+            if self.manual_group !='none':
+                generated_groups = ans['generated_groups']
+                self.existing_groups = ans['existing_groups']
+                self.remaining_names = ans['remaining_names']
 
-            self._update_output_display(generated_groups)
+                self._update_output_display(generated_groups)
+            else:
+                self._update_output_display(ans)
 
         except Exception as e:
             logger.error(f"Error forming groups: {e}")
@@ -257,7 +266,7 @@ class GroupFormationView(UserControl):
         self.output_text.content.controls.clear()
 
         for i, group in enumerate(groups, 1):
-            group_text = "\n".join([f"• {name}" for name in group])
+            group_text = "\n".join([f" {name}" for name in group])
             group_box = TextField(
                 label=f"Group {i}",
                 value=group_text,
@@ -407,6 +416,7 @@ class GroupFormationView(UserControl):
         self.output_text.content.controls.clear()
         self.manually_assigned_names = []
         self.existing_groups = None
+        self.remaining_names = []
         self.create_empty_group_boxes(int(self.group_num_input.value))
 
         self.output_text.update()
