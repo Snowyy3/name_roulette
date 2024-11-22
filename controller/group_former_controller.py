@@ -134,9 +134,7 @@ class GroupFormationController:
         male_count = kwargs.get("male_count")
         female_count = kwargs.get("female_count")
         if existing_groups is None:
-            print('đã vào exsitng none')
-            get_group_names = self.group_former.get_groups_remainging_names(names=names, output_text=ouput_text,group_num=group_num)
-            print('đã vượt qua lấy exiting và remaing names')
+            get_group_names = self.group_former.get_groups_remainging_names(names=names, output_text=ouput_text,group_num=group_num, remaining_names=remaining_names)
             existing_groups = get_group_names['existing_groups']
             remaining_names = get_group_names['remaining_names']
 
@@ -148,7 +146,6 @@ class GroupFormationController:
             female_count= female_count,
             group_size= group_size
         )
-        print('gênrate', generated_groups)
         return {'generated_groups': generated_groups, 'existing_groups':existing_groups, 'remaining_names': remaining_names}
 
 
