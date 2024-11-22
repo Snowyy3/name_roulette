@@ -1,4 +1,5 @@
 import flet as ft
+import webbrowser
 from flet import (
     UserControl,
     Container,
@@ -13,17 +14,21 @@ from flet import (
 from ui.views import View
 
 
+
+
 class LeftSidebar(UserControl):
     def __init__(self, on_view_change):
         super().__init__()
         self.on_view_change = on_view_change
         self.current_view = View.NAME_PICKER
 
+
     def build(self):
         self.menu_button = IconButton(
             icon=ft.icons.MENU,
             on_click=self.toggle_sidebar,
         )
+
 
         self.menu_container = Container(
             content=Container(
@@ -34,6 +39,7 @@ class LeftSidebar(UserControl):
             height=60,
             width=80,
         )
+
 
         self.main_nav = NavigationRail(
             selected_index=0,
@@ -60,6 +66,7 @@ class LeftSidebar(UserControl):
             bgcolor=ft.colors.TRANSPARENT,
         )
 
+
         self.bottom_nav = NavigationRail(
             selected_index=None,
             label_type=ft.NavigationRailLabelType.NONE,
@@ -69,15 +76,16 @@ class LeftSidebar(UserControl):
             group_alignment=-0.9,
             destinations=[
                 NavigationRailDestination(
-                    label="Settings",
-                    icon=ft.icons.SETTINGS_OUTLINED,
-                    selected_icon=ft.icons.SETTINGS,
+                    label="About Us",
+                    icon=ft.icons.INFO_OUTLINED,
+                    selected_icon=ft.icons.INFO,
                     padding=10,
                 ),
             ],
-            on_change=self.change_bottom_nav,
+            on_change=self.open_about_us,
             bgcolor=ft.colors.TRANSPARENT,
         )
+
 
         self.container = Container(
             content=Column(
@@ -105,23 +113,29 @@ class LeftSidebar(UserControl):
             animate=ft.animation.Animation(200, ft.animation.AnimationCurve.EASE_OUT_CUBIC),
         )
 
+
         return self.container
+
 
     def toggle_sidebar(self, _):
         self.main_nav.extended = not self.main_nav.extended
         self.bottom_nav.extended = self.main_nav.extended
 
+
         label_type = ft.NavigationRailLabelType.ALL if self.main_nav.extended else ft.NavigationRailLabelType.NONE
         self.main_nav.label_type = label_type
         self.bottom_nav.label_type = label_type
+
 
         self.container.width = 200 if self.main_nav.extended else 80
         self.container.update()
         self.main_nav.update()
         self.bottom_nav.update()
 
+
     def update_navigation_state(self, selected_view: View):
         self.current_view = selected_view
+
 
         if selected_view in [View.NAME_PICKER, View.GROUP_FORMER]:
             self.main_nav.selected_index = selected_view.value - 1
@@ -130,12 +144,14 @@ class LeftSidebar(UserControl):
             self.main_nav.selected_index = None
             self.bottom_nav.selected_index = 0
 
+
         self.main_nav.update()
         self.bottom_nav.update()
 
-    def change_bottom_nav(self, _):
-        self.update_navigation_state(View.SETTINGS)
-        self.on_view_change(View.SETTINGS)
+
+    def open_about_us(self, _):
+        webbrowser.open("https://github.com/Snowyy3/name_roulette")
+
 
     def change_main_nav(self, event: ControlEvent):
         selected_index = event.control.selected_index
@@ -143,6 +159,10 @@ class LeftSidebar(UserControl):
         self.update_navigation_state(view)
         self.on_view_change(view)
 
+
     def resize(self, height):
         self.container.height = height
         self.container.update()
+
+
+
