@@ -266,12 +266,12 @@ class GroupFormationView(UserControl):
         self.output_text.content.controls.clear()
 
         for i, group in enumerate(groups, 1):
-            group_text = "\n".join([f" {name}" for name in group])
+            group_text = "\n".join([f"• {name}" for name in group])
             group_box = TextField(
                 label=f"Group {i}",
                 value=group_text,
                 multiline=True,
-                width=200,
+                width=300,
                 text_align=ft.TextAlign.LEFT,
                 border=ft.border.all(1, ft.colors.GREY_300),
                 on_change=self._handle_manual_input,
