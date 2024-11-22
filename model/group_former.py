@@ -170,16 +170,8 @@ class GroupFormer:
         females = [name for name, gender in names if gender == "female"]
         return {"male": males, "female": females}
 
-    def generate_names_with_gender(
-        self,
-        names: list[tuple[str, str]],
-        male_count: int,
-        female_count: int,
-        group_size: int = None,
-        num_groups: int = None,
-    ) -> list[list[str]]:
-        """Generate gender-balanced groups"""
-        print(names)
+    def generate_names_with_gender(self,names: list[tuple[str, str]],male_count: int,female_count: int,group_size: int = None,num_groups: int = None,) -> list[list[str]]:
+        """Generate gender-balanced groups with fallback for insufficient members."""
         if not names:
             return []
 
@@ -201,40 +193,49 @@ class GroupFormer:
         # Initialize groups
         groups = [[] for _ in range(num_groups)]
 
-        # Validate gender requirements can be met
+        # Handle insufficient males or females with warnings
         if male_count > 0 and len(males) < male_count * num_groups:
-            raise ValueError(f"Not enough males to meet requirement of {male_count} per group")
+            print(f"Not enough males to meet requirement of {male_count} per group. Proceeding with available males.")
         if female_count > 0 and len(females) < female_count * num_groups:
-            raise ValueError(f"Not enough females to meet requirement of {female_count} per group")
+            print(f"Not enough females to meet requirement of {female_count} per group. Proceeding with available females.")
 
         # Distribute required males first
         if male_count > 0:
             for i in range(num_groups):
-                group_males = rd.sample(males, male_count)
-                groups[i].extend((name, "male") for name in group_males)
-                for name in group_males:
-                    males.remove(name)
+                if males:  # Only distribute if there are remaining males
+                    group_males = rd.sample(males, min(male_count, len(males)))
+                    groups[i].extend((name, "male") for name in group_males)
+                    for name in group_males:
+                        males.remove(name)
 
         # Then distribute required females
         if female_count > 0:
             for i in range(num_groups):
-                group_females = rd.sample(females, female_count)
-                groups[i].extend((name, "female") for name in group_females)
-                for name in group_females:
-                    females.remove(name)
+                if females:  # Only distribute if there are remaining females
+                    group_females = rd.sample(females, min(female_count, len(females)))
+                    groups[i].extend((name, "female") for name in group_females)
+                    for name in group_females:
+                        females.remove(name)
 
-        # Distribute remaining members evenly
+        # Distribute remaining members evenly (any gender)
         remaining = [(name, "male") for name in males] + [(name, "female") for name in females]
         rd.shuffle(remaining)
 
+        # Add remaining members to groups
         i = 0
         while remaining and any(len(group) < group_size for group in groups):
             if len(groups[i]) < group_size:
                 groups[i].append(remaining.pop())
             i = (i + 1) % num_groups
 
-        # Extract just the names from the (name, gender) tuples
+        # Ensure no group is empty
+        for group in groups:
+            if not group and remaining:
+                group.append(remaining.pop())
+
+        # Format groups to return only names
         return [[name for name, _ in group] for group in groups if group]
+
 
     def counting_name(self, names_only: list[str]) -> dict[str, int]:
         """
