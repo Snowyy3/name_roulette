@@ -320,55 +320,55 @@ class GroupFormer:
         female_count: int,
         group_size: int,
     ) -> list[list[str]]:
+        """
+        Handle manual group assignment with gender balance and size adjustment.
+        """
         # Phân loại remaining_names theo giới tính
-
         males = [name for name, gender in remaining_names if gender == "male"]
-        rd.shuffle(males)
         females = [name for name, gender in remaining_names if gender == "female"]
+        rd.shuffle(males)
         rd.shuffle(females)
-        
+
         # Chuyển đổi các nhóm hiện có để dễ xử lý
         groups = [list(group) for group in existing_group]
-        
+
         # Hàm kiểm tra số lượng nam và nữ trong nhóm
         def count_gender(group):
             male_in_group = sum(1 for _, gender in group if gender == "male")
             female_in_group = sum(1 for _, gender in group if gender == "female")
             return male_in_group, female_in_group
-        
+
         # Đảm bảo từng nhóm thỏa mãn số lượng tối thiểu
         for group in groups:
             male_in_group, female_in_group = count_gender(group)
-            
+
             # Đảm bảo số lượng nam
             while male_in_group < male_count and males:
                 group.append((males.pop(), "male"))
                 male_in_group += 1
-            
+
             # Đảm bảo số lượng nữ
             while female_in_group < female_count and females:
                 group.append((females.pop(), "female"))
                 female_in_group += 1
 
-        # Phân bổ các phần tử còn lại vào các nhóm còn thiếu chỗ
-        for group in groups:
-            while len(group) < group_size and (males or females):
-                if males:
-                    group.append((males.pop(), "male"))
-                elif females:
-                    group.append((females.pop(), "female"))
+        # Tính toán kích thước hiện tại của từng nhóm
+        group_sizes = [len(group) for group in groups]
 
-        # Nếu vẫn còn phần tử chưa phân bổ, tạo nhóm mới
-        while males or females:
-            new_group = []
-            while len(new_group) < group_size and (males or females):
-                if males:
-                    new_group.append((males.pop(), "male"))
-                elif females:
-                    new_group.append((females.pop(), "female"))
-            groups.append(new_group)
+        # Phân bổ thành viên còn lại sao cho cân bằng nhóm
+        remaining_members = [(name, "male") for name in males] + [(name, "female") for name in females]
+        rd.shuffle(remaining_members)
+
+        for member in remaining_members:
+            # Tìm nhóm có kích thước nhỏ nhất
+            min_group_index = group_sizes.index(min(group_sizes))
+            groups[min_group_index].append(member)
+            group_sizes[min_group_index] += 1
+
+        # Nếu vẫn còn nhóm rỗng, bổ sung từ các thành viên đã phân bổ
+        for i, group in enumerate(groups):
+            if not group and remaining_members:
+                groups[i].append(remaining_members.pop())
 
         # Định dạng lại các nhóm để chỉ trả về tên
-        result = [[name for name, _ in group] for group in groups]
-        
-        return result
+        return [[name for name, _ in group] for group in groups if group]
